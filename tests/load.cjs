@@ -4,9 +4,9 @@ const path = require('path');
 const vm = require('vm');
 module.exports = function load() {
   const ctx = vm.createContext({console});
-  for (const f of ['data.js', 'architektura.js', 'wnetrza.js', 'calc.js', 'dopasowanie.js']) {
+  for (const f of ['data.js', 'architektura.js', 'wnetrza.js', 'calc.js', 'zawody.js', 'dopasowanie.js']) {
     const src = fs.readFileSync(path.join(__dirname, '..', 'app', 'js', f), 'utf8').replace(/^if \(typeof module.*$/m, '');
     vm.runInContext(src, ctx, {filename: f});
   }
-  return vm.runInContext('({matchCourses, topDistinct, TRAITS, ARCH, AW, OFFERS, OMAP, compute, archCompute, archMax, status, gains, K, U})', ctx);
+  return vm.runInContext('({ZAWODY, matchJobs, topJobs, matchCourses, topDistinct, TRAITS, ARCH, AW, OFFERS, OMAP, compute, archCompute, archMax, status, gains, K, U})', ctx);
 };

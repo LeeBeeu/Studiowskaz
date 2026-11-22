@@ -3,9 +3,10 @@
 Aplikacja na telefon (PWA) i do przeglądarki dla maturzysty: wymagania rekrutacyjne polskich uczelni,
 pełna baza kierunku **architektura** i ranking przedmiotów, które najbardziej podnoszą wynik.
 
-- **Dopasuj kierunek**: test (ok. 3 minuty) – zainteresowania (model Hollanda RIASEC), dziedziny, mocne i słabe przedmioty,
-  styl pracy. Wynik: 3 najlepiej pasujące kierunki z różnych grup, z wyjaśnieniem, zawodami, przedmiotami kluczowymi
-  i linkiem do uczelni. Mocne strony uzupełniają się z „Moich wyników”. Profile kierunków są w `app/js/dopasowanie.js`.
+- **Dopasuj zawód**: test (ok. 4 minuty) – 18 zdań o zainteresowaniach (model Hollanda RIASEC), dziedziny,
+  co jest ważne w pracy, mocne i słabe przedmioty, styl pracy. Wynik: 3 najlepiej pasujące zawody z przyszłością
+  (opis, ocena perspektyw z uzasadnieniem, droga przez studia i bez studiów) oraz kierunki studiów, które do nich prowadzą.
+  Baza ok. 60 zawodów jest w `app/js/zawody.js`, profile kierunków i logika w `app/js/dopasowanie.js`.
 - **Architektura**: 22 uczelnie (16 publicznych, 6 niepublicznych). Przy każdej: wzór rekrutacyjny, egzamin z rysunku
   (format, skala, minimum), terminy, limit miejsc, progi z lat ubiegłych, źródła i poziom pewności danych.
   Punkty liczone są w skali danej uczelni. Suwak „przewidywany wynik z rysunku” przelicza się na każdą skalę.

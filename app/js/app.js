@@ -1,5 +1,5 @@
 // Interfejs aplikacji Studiowskaz.
-/* global QUIZ_ITEMS, LIKERT, DOMAINS, STRENGTH_SUBJ, STRENGTH_LABEL, RIASEC, matchCourses, topDistinct, quizProgress, createStore, SUBJ, MANDATORY, K, U, ARCH, AW, AW_FACTS, DETAIL, ARCH_PEWNOSC, TYPES, DEG, DEGS, KMAP, OFFERS, OMAP, compute, status, gains, num, fmt, norm, boosted, archMax */
+/* global VALUES, matchJobs, topJobs, QUIZ_ITEMS, LIKERT, DOMAINS, STRENGTH_SUBJ, STRENGTH_LABEL, RIASEC, matchCourses, topDistinct, quizProgress, createStore, SUBJ, MANDATORY, K, U, ARCH, AW, AW_FACTS, DETAIL, ARCH_PEWNOSC, TYPES, DEG, DEGS, KMAP, OFFERS, OMAP, compute, status, gains, num, fmt, norm, boosted, archMax */
 
 /* ===================== STAN ===================== */
 const SAMPLE = {profile: {pol: {pp: 70}, mat: {pp: 78, pr: 52}, obc: {pp: 88, pr: 70}, hsz: {pr: 55}, rys: {pr: 60}},
@@ -104,11 +104,11 @@ function archCard(o, r) {
 /* ===================== DOPASUJ KIERUNEK ===================== */
 const QKEY = KEY + ".quiz";
 let Q = (() => {try {return JSON.parse(localStorage.getItem(QKEY)) || {};} catch (e) {return {};}})();
-Q.items = Q.items || Array(QUIZ_ITEMS.length).fill(null); Q.domains = Q.domains || []; Q.str = Q.str || {};
+Q.items = (Q.items || []).concat(Array(QUIZ_ITEMS.length).fill(null)).slice(0, QUIZ_ITEMS.length); Q.domains = Q.domains || []; Q.str = Q.str || {}; Q.values = Q.values || [];
 function saveQLocal() {try {localStorage.setItem(QKEY, JSON.stringify(Q));} catch (e) { /* tryb prywatny */ }}
 function saveQ() {saveQLocal(); if (typeof syncSoon === "function") syncSoon();}
-const emptyQ = () => ({items: Array(QUIZ_ITEMS.length).fill(null), domains: [], str: {}});
-const quizAnswered = () => Q.items.some(x => x != null) || Q.domains.length || Object.keys(Q.str).length;
+const emptyQ = () => ({items: Array(QUIZ_ITEMS.length).fill(null), domains: [], str: {}, values: []});
+const quizAnswered = () => Q.items.some(x => x != null) || Q.domains.length || Object.keys(Q.str).length || Q.values.length;
 const SHORT = ["Nie", "Raczej nie", "Trudno powiedzieć", "Raczej tak", "Tak"];
 /** Mocne strony domyślnie z wyników matury (gdy użytkownik nie oceniał sam). */
 function strFromProfile(s) {
@@ -119,11 +119,12 @@ function strFromProfile(s) {
 }
 function quizAnswers() {
   const str = {}; STRENGTH_SUBJ.forEach(s => {const v = Q.str[s] || strFromProfile(s); if (v) str[s] = v;});
-  return {items: Q.items, domains: Q.domains, str, people: Q.people ?? null, field: Q.field ?? null, long: Q.long ?? null};
+  return {items: Q.items, domains: Q.domains, values: Q.values, str, people: Q.people ?? null, field: Q.field ?? null, long: Q.long ?? null};
 }
 function renderQuiz() {
   $("#q-items").innerHTML = QUIZ_ITEMS.map(([, t], i) => `<div class="q-item"><p>${esc(t)}</p>
     <div class="seg" role="group" aria-label="${esc(t)}">${SHORT.map((l, j) => `<button type="button" data-qi="${i}" data-v="${j + 1}" aria-pressed="${Q.items[i] === j + 1}" title="${LIKERT[j]}">${l}</button>`).join("")}</div></div>`).join("");
+  $("#q-values").innerHTML = Object.entries(VALUES).map(([k, v]) => `<button type="button" data-qv="${k}" aria-pressed="${Q.values.includes(k)}">${esc(v)}</button>`).join("");
   $("#q-domains").innerHTML = Object.entries(DOMAINS).map(([k, v]) => `<button type="button" data-qd="${k}" aria-pressed="${Q.domains.includes(k)}">${esc(v)}</button>`).join("");
   const anyProf = STRENGTH_SUBJ.some(s => strFromProfile(s));
   $("#q-str-note").textContent = anyProf ? "Część ocen uzupełniliśmy z Twoich wyników w „Moje wyniki”. Zmień je, jeśli czujesz inaczej." : "Oceń przedmioty szkolne. Możesz pominąć te, których nie masz.";
@@ -141,43 +142,60 @@ function renderQuiz() {
     `<button type="button" data-qk="${k}" data-v="${v}" aria-pressed="${Q[k] === v}">${l}</button>`).join("")}</div></div>`).join("");
   renderQuizResult();
 }
+const STARS = n => "●".repeat(n) + "○".repeat(3 - n);
+const FUTURE = {3: "duży popyt w najbliższych latach", 2: "stabilny popyt", 1: "zawód się zmienia, konkurencja rośnie"};
 function renderQuizResult() {
   const pr = quizProgress(Q);
   $("#quiz-bar").innerHTML = `<span class="sub">Odpowiedzi: <b class="num">${pr.answered}/${pr.total}</b></span><div class="pbar"><i style="width:${pr.answered / pr.total * 100}%"></i></div>` +
-    (pr.ready ? '<button type="button" class="primary" id="q-go">Zobacz wynik ↓</button>' : `<span class="sub">wynik od 8 odpowiedzi</span>`);
+    (pr.ready ? '<button type="button" class="primary" id="q-go">Zobacz wynik ↓</button>' : `<span class="sub">wynik od 10 odpowiedzi</span>`);
   const go = $("#q-go"); if (go) go.onclick = () => $("#quiz-result").scrollIntoView({behavior: "smooth"});
   const el = $("#quiz-result");
-  if (!pr.ready) {el.innerHTML = `<h3>Twoje kierunki</h3><p class="sub">Odpowiedz na co najmniej 8 z 12 zdań w części 1, a tu pojawią się 3 najlepiej pasujące kierunki.</p>`; return;}
-  const all = matchCourses(quizAnswers()), top = topDistinct(all, 3);
-  const shown = new Set(top.flatMap(t => [t.id, ...t.similar.map(x => x.id)]));
-  const rest = all.filter(r => !shown.has(r.id)).slice(0, 5);
+  if (!pr.ready) {el.innerHTML = `<h3>Twoje zawody</h3><p class="sub">Odpowiedz na co najmniej 10 z ${pr.total} zdań w części 1, a tu pojawią się 3 najlepiej pasujące zawody i kierunki studiów.</p>`; return;}
+  const ans = quizAnswers();
+  const jobs = matchJobs(ans), top = topJobs(jobs, 3);
+  const rest = jobs.filter(j => !top.includes(j)).slice(0, 5);
+  const courses = matchCourses(ans);
+  const cScore = Object.fromEntries(courses.map(c => [c.id, c.score]));
+  // Kierunki prowadzące do najlepszych zawodów, ułożone wg dopasowania kierunku do odpowiedzi.
+  const viaJobs = [...new Set(top.flatMap(j => j.kier.split(" ")))].filter(id => cScore[id] != null).sort((a, b) => cScore[b] - cScore[a]).slice(0, 5);
   const link = id => id === "arc" ? "#architektura" : id === "aw" ? "#wnetrza" : "#szukaj";
-  el.innerHTML = `<h3>Twoje 3 najlepiej pasujące kierunki</h3>
-    <p class="sub">Wynik jest wskazówką, a nie wyrocznią. Porównuje Twoje odpowiedzi z profilem kierunku: zainteresowania (45%), przedmioty kluczowe dla rekrutacji (30%), dziedziny (15%) i styl pracy (10%).</p>
+  const kname = id => KMAP[id] ? KMAP[id].name : id;
+  el.innerHTML = `<h3>Twoje 3 najlepiej pasujące zawody</h3>
+    <p class="sub">Wynik jest wskazówką, a nie wyrocznią. Łączy zainteresowania (40%), mocne strony (20%), dziedziny (15%), to, co jest dla Ciebie ważne (15%) i styl pracy (10%).</p>
     ${top.map((t, i) => `<article class="match ${i === 0 ? "first" : ""}">
       <header><h3>${i + 1}. ${esc(t.name)}</h3><span class="pct">${t.score}%</span></header>
       <div class="bar" aria-hidden="true"><i style="width:${t.score}%"></i></div>
+      <p class="jobs">${esc(t.opis)}</p>
       ${t.why.length ? `<ul>${t.why.map(w => `<li>${esc(w)}</li>`).join("")}</ul>` : ""}
       ${t.warns.length ? `<p class="warn">Uwaga: ${esc(t.warns.join("; "))}.</p>` : ""}
-      <p class="jobs"><b>Zawody:</b> ${esc(t.jobs)}</p>
-      <p class="sub" style="margin:0"><b>Kluczowe przedmioty:</b> ${esc([...new Set(t.keys.filter(k => k.w >= .2).map(k => k.subs.map(s => STRENGTH_LABEL[s] || SUBJ[s][0]).join(" / ")))].join(", "))}</p>
-      ${t.similar.length ? `<p class="sub" style="margin:0"><b>Podobne kierunki:</b> ${esc(t.similar.map(x => `${x.name} (${x.score}%)`).join(", "))}</p>` : ""}
-      <div class="acts"><a class="btn" href="${link(t.id)}" data-qgo="${esc(t.name)}">Zobacz uczelnie</a></div>
+      <p class="future"><span class="stars" aria-label="perspektywy ${t.future} na 3">${STARS(t.future)}</span> <b>Perspektywy:</b> ${FUTURE[t.future]}. ${esc(t.trend)}</p>
+      <div class="path"><b>Jak zostać:</b>
+        <div>Studia: ${t.kier.split(" ").filter(id => KMAP[id]).map(id => `<a href="${link(id)}" data-qgo="${esc(kname(id))}">${esc(kname(id))}</a>`).join(", ")}</div>
+        ${t.inna ? `<div>Bez studiów lub równolegle: ${esc(t.inna)}</div>` : `<div class="sub">Do tego zawodu prowadzą praktycznie tylko studia.</div>`}
+      </div>
     </article>`).join("")}
-    ${rest.length ? `<p class="sub" style="margin:16px 0 0"><b>Kolejne dopasowania:</b></p><ol class="more-list" start="4">${rest.map(r => `<li><a href="${link(r.id)}" data-qgo="${esc(r.name)}">${esc(r.name)}</a> · ${r.score}%</li>`).join("")}</ol>` : ""}
+    ${rest.length ? `<p class="sub" style="margin:16px 0 0"><b>Kolejne zawody:</b></p><ol class="more-list" start="4">${rest.map(r => `<li>${esc(r.name)} · ${r.score}%</li>`).join("")}</ol>` : ""}
+    <h3 style="margin-top:18px">Kierunki studiów, które prowadzą do tych zawodów</h3>
+    <p class="sub">Ułożone według tego, jak kierunek pasuje do Twoich odpowiedzi i mocnych przedmiotów.</p>
+    <ol class="more-list">${viaJobs.map(id => `<li><a href="${link(id)}" data-qgo="${esc(kname(id))}">${esc(kname(id))}</a> · ${cScore[id]}%</li>`).join("")}</ol>
     <div class="tools"><button type="button" id="q-reset">Zacznij od nowa</button></div>`;
   $("#q-reset").onclick = () => {Q = emptyQ(); saveQ(); renderQuiz(); window.scrollTo(0, 0);};
 }
 document.addEventListener("click", e => {
-  const b = e.target.closest("[data-qi],[data-qd],[data-qs],[data-qk]");
+  const b = e.target.closest("[data-qi],[data-qd],[data-qs],[data-qk],[data-qv]");
   if (b) {
     if (b.dataset.qi != null) {const i = +b.dataset.qi, v = +b.dataset.v; Q.items[i] = Q.items[i] === v ? null : v;}
     else if (b.dataset.qd) Q.domains = Q.domains.includes(b.dataset.qd) ? Q.domains.filter(x => x !== b.dataset.qd) : [...Q.domains, b.dataset.qd];
     else if (b.dataset.qs) Q.str[b.dataset.qs] = b.dataset.v;
+    else if (b.dataset.qv) {
+      const v = b.dataset.qv;
+      if (Q.values.includes(v)) Q.values = Q.values.filter(x => x !== v);
+      else if (Q.values.length < 3) Q.values = [...Q.values, v];
+    }
     else {const k = b.dataset.qk, v = b.dataset.v === "true" ? true : b.dataset.v === "false" ? false : +b.dataset.v; Q[k] = Q[k] === v ? null : v;}
     saveQ();
     const grp = b.parentElement; grp.querySelectorAll("button").forEach(x => {
-      const on = x.dataset.qd ? Q.domains.includes(x.dataset.qd) : x.dataset.qi != null ? Q.items[+x.dataset.qi] === +x.dataset.v
+      const on = x.dataset.qv ? Q.values.includes(x.dataset.qv) : x.dataset.qd ? Q.domains.includes(x.dataset.qd) : x.dataset.qi != null ? Q.items[+x.dataset.qi] === +x.dataset.v
         : x.dataset.qs ? (Q.str[x.dataset.qs] || strFromProfile(x.dataset.qs)) === x.dataset.v : String(Q[x.dataset.qk]) === x.dataset.v;
       x.setAttribute("aria-pressed", on);
     });

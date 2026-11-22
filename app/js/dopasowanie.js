@@ -1,6 +1,6 @@
 // Dopasowanie kierunku: test zainteresowań (model Hollanda RIASEC), dziedziny, mocne i słabe przedmioty, styl pracy.
 // Wynik to ranking kierunków z bazy (data.js) z wyjaśnieniem i przykładowymi zawodami.
-/* global K, SUBJ */
+/* global K, SUBJ, ZAWODY, VALUES */
 
 const RIASEC = {
   R: {name: "praktyczne", desc: "praca rękami, technika, działanie w terenie"},
@@ -23,7 +23,13 @@ const QUIZ_ITEMS = [
   ["A", "Zwracam uwagę na estetykę, kolory i formę rzeczy wokół mnie."],
   ["S", "Dobrze czuję się w pracy z ludźmi, także z dziećmi albo z chorymi."],
   ["E", "Myślę o własnym biznesie, sprzedaży albo zarządzaniu projektami."],
-  ["C", "Praca z liczbami, dokumentami albo przepisami mnie nie nudzi."]
+  ["C", "Praca z liczbami, dokumentami albo przepisami mnie nie nudzi."],
+  ["R", "Lubię pracę z narzędziami, maszynami albo sprzętem elektronicznym."],
+  ["I", "Lubię uczyć się nowych technologii albo programować."],
+  ["A", "Wymyślam nietypowe rozwiązania i pomysły, a nie tylko robię to, co trzeba."],
+  ["S", "Inni przychodzą do mnie po radę albo żeby się wygadać."],
+  ["E", "Lubię rywalizację i wyzwania z jasnym celem do osiągnięcia."],
+  ["C", "Dokładność to moja mocna strona – wyłapuję błędy, które inni przeoczą."]
 ];
 const LIKERT = ["Zupełnie nie", "Raczej nie", "Trudno powiedzieć", "Raczej tak", "Bardzo tak"];
 
@@ -126,12 +132,27 @@ function riasecVec(code) {
   return v;
 }
 
+/** Profil zainteresowań użytkownika: średnia 0–1 dla każdego typu RIASEC. */
+function userRiasec(items) {
+  const sums = {R: [], I: [], A: [], S: [], E: [], C: []};
+  QUIZ_ITEMS.forEach(([t], i) => {if (items && items[i] != null) sums[t].push((items[i] - 1) / 4);});
+  const u = {}; Object.keys(sums).forEach(t => {u[t] = sums[t].length ? sums[t].reduce((a, b) => a + b, 0) / sums[t].length : .5;});
+  return u;
+}
+/** Podobieństwo profilu (korelacja po odjęciu średniej), 0–1. Liczy się to, co lubisz bardziej od reszty,
+ *  więc odpowiadanie „tak” na wszystko nie podbija wyniku wszystkich zawodów. */
+function riasecSim(u, code) {
+  const kv = riasecVec(code), T = Object.keys(kv);
+  const mu = T.reduce((a, t) => a + u[t], 0) / 6, mk = T.reduce((a, t) => a + kv[t], 0) / 6;
+  let dot = 0, nu = 0, nk = 0;
+  T.forEach(t => {const a = u[t] - mu, b = kv[t] - mk; dot += a * b; nu += a * a; nk += b * b;});
+  if (nu < 1e-6) return .5;
+  return (dot / Math.sqrt(nu * nk) + 1) / 2;
+}
+
 /** Ranking kierunków dla odpowiedzi. answers: {items: [1..5|null x12], domains: [klucze], str: {przedmiot: "mocna"|"srednia"|"slaba"}, people, field: 0..2|null, long: true|false|null} */
 function matchCourses(answers) {
-  const items = answers.items || [];
-  const sums = {R: [], I: [], A: [], S: [], E: [], C: []};
-  QUIZ_ITEMS.forEach(([t], i) => {if (items[i] != null) sums[t].push((items[i] - 1) / 4);});
-  const u = {}; Object.keys(sums).forEach(t => {u[t] = sums[t].length ? sums[t].reduce((a, b) => a + b, 0) / sums[t].length : .5;});
+  const u = userRiasec(answers.items);
   const dom = new Set(answers.domains || []);
   const str = answers.str || {};
   const sv = s => STRENGTH_VAL[str[s]] ?? .5;
@@ -139,7 +160,7 @@ function matchCourses(answers) {
   return K.filter(k => TRAITS[k[0]]).map(k => {
     const [code, doms, people, field, jobs] = TRAITS[k[0]];
     const kv = riasecVec(code);
-    const interest = Object.keys(kv).reduce((a, t) => a + kv[t] * u[t], 0) / 6;
+    const interest = riasecSim(u, code);
     const kd = doms.split(" ");
     const domain = dom.size ? (kd.some(d => dom.has(d)) ? 1 : 0) : .5;
     const subjParts = keySubjects(k).map(p => {
@@ -156,7 +177,7 @@ function matchCourses(answers) {
     if (longStudy && answers.long === false) total *= .7;
 
     const why = [];
-    const topU = Object.keys(kv).filter(t => kv[t] >= 2 && u[t] >= .6).map(t => RIASEC[t].name);
+    const topU = topInterests(u, kv);
     if (topU.length) why.push("pasują Ci zainteresowania " + topU.join(" i "));
     const dHit = kd.filter(d => dom.has(d)).map(d => DOMAINS[d].toLowerCase());
     if (dHit.length) why.push("ciekawi Cię: " + dHit.join(", "));
@@ -181,10 +202,60 @@ function topDistinct(results, n) {
   return out;
 }
 
-/** Ile odpowiedzi brakuje do sensownego wyniku (min. 8 z 12 stwierdzeń). */
-function quizProgress(answers) {
-  const n = (answers.items || []).filter(x => x != null).length;
-  return {answered: n, total: QUIZ_ITEMS.length, ready: n >= 8};
+/** Typy zainteresowań, które są mocne u użytkownika (powyżej jego średniej) i ważne w zawodzie/kierunku. */
+function topInterests(u, kv) {
+  const mu = Object.values(u).reduce((a, b) => a + b, 0) / 6;
+  return Object.keys(kv).filter(t => kv[t] >= 2 && u[t] >= .5 && u[t] > mu).map(t => RIASEC[t].name);
 }
 
-if (typeof module !== "undefined") module.exports = {LIKERT, STRENGTH_LABEL, RIASEC, QUIZ_ITEMS, DOMAINS, TRAITS, matchCourses, topDistinct, quizProgress, keySubjects, STRENGTH_SUBJ};
+/** Ranking zawodów. answers jak w matchCourses + values: [klucze VALUES]. */
+function matchJobs(answers) {
+  const u = userRiasec(answers.items);
+  const dom = new Set(answers.domains || []), vals = answers.values || [];
+  const str = answers.str || {}; const sv = s => STRENGTH_VAL[str[s]] ?? .5;
+  return ZAWODY.map(z => {
+    const kv = riasecVec(z.code);
+    const interest = riasecSim(u, z.code);
+    const zd = z.dom.split(" "), zv = z.val.split(" "), subj = z.subj.split(" ");
+    const domain = dom.size ? (zd.some(d => dom.has(d)) ? 1 : 0) : .5;
+    const vHit = vals.filter(v => zv.includes(v));
+    const values = vals.length ? vHit.length / vals.length : .5;
+    const subjects = subj.reduce((a, s) => a + sv(s), 0) / subj.length;
+    let style = 1;
+    if (answers.people != null) style -= Math.abs(answers.people - z.people) / 4;
+    if (answers.field != null) style -= Math.abs(answers.field - z.field) / 4;
+    let total = .40 * interest + .15 * domain + .15 * values + .20 * subjects + .10 * style;
+    if (z.long && answers.long === false) total *= .75;
+    const why = [];
+    const topU = topInterests(u, kv);
+    if (topU.length) why.push("pasują Ci zainteresowania " + topU.join(" i "));
+    const dHit = zd.filter(d => dom.has(d)).map(d => DOMAINS[d].toLowerCase());
+    if (dHit.length) why.push("ciekawi Cię: " + dHit.join(", "));
+    if (vHit.length) why.push("daje to, co dla Ciebie ważne: " + vHit.map(v => VALUES[v].toLowerCase()).join(", "));
+    const strong = subj.filter(s => sv(s) >= 1).map(s => (STRENGTH_LABEL[s] || SUBJ[s][0]).toLowerCase());
+    if (strong.length) why.push("przydadzą się Twoje mocne strony: " + strong.join(", "));
+    const warns = [];
+    const weak = subj.filter(s => sv(s) <= .1).map(s => (STRENGTH_LABEL[s] || SUBJ[s][0]).toLowerCase());
+    if (weak.length) warns.push("przyda się " + weak.join(", ") + ", oznaczone jako słaba strona");
+    if (z.long && answers.long === false) warns.push("droga prowadzi przez studia jednolite 5–6 lat");
+    return {...z, score: Math.round(total * 100), why, warns};
+  }).sort((a, b) => b.score - a.score || a.name.localeCompare(b.name, "pl"));
+}
+/** Najlepsze zawody, najwyżej 2 z tej samej grupy, żeby propozycje były różnorodne. */
+function topJobs(results, n) {
+  const out = [], cnt = {};
+  for (const r of results) {
+    if ((cnt[r.cluster] || 0) >= 2) continue;
+    out.push(r); cnt[r.cluster] = (cnt[r.cluster] || 0) + 1;
+    if (out.length >= n) break;
+  }
+  return out;
+}
+
+/** Ile odpowiedzi brakuje do sensownego wyniku (min. 10 z 18 stwierdzeń). */
+function quizProgress(answers) {
+  const n = (answers.items || []).filter(x => x != null).length;
+  return {answered: n, total: QUIZ_ITEMS.length, ready: n >= 10};
+}
+
+if (typeof module !== "undefined") module.exports = {matchJobs, topJobs, riasecSim, userRiasec, LIKERT, STRENGTH_LABEL, RIASEC, QUIZ_ITEMS, DOMAINS, TRAITS, matchCourses, topDistinct, quizProgress, keySubjects, STRENGTH_SUBJ};

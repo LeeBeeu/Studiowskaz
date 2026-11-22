@@ -6,7 +6,7 @@ const read = f => fs.readFileSync(path.join(app, f), 'utf8');
 const html = read('index.html');
 const body = html.slice(html.indexOf('<body>') + 6, html.indexOf('<script src="js/data.js">'));
 // Artifact nie może łączyć się z Firebase, więc działa w trybie lokalnym (FIREBASE_CONFIG = null).
-const js = ['const FIREBASE_CONFIG = null;', read('js/store.js'), ...['data.js', 'architektura.js', 'wnetrza.js', 'calc.js', 'dopasowanie.js', 'app.js'].map(f => read('js/' + f))].join('\n');
+const js = ['const FIREBASE_CONFIG = null;', read('js/store.js'), ...['data.js', 'architektura.js', 'wnetrza.js', 'calc.js', 'zawody.js', 'dopasowanie.js', 'app.js'].map(f => read('js/' + f))].join('\n');
 const out = `<title>Studiowskaz</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">

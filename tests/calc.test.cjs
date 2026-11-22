@@ -115,3 +115,25 @@ test('dopasowanie: profil społeczny i medyczny wskazuje kierunek o zdrowiu albo
   assert.ok(['pie', 'psy', 'fzj', 'pol', 'lek', 'ped'].includes(top[0].id), top[0].id);
   assert.equal(new Set(top.map(t => t.group)).size, 3);   // trzy różne grupy
 });
+
+test('zawody: każdy zawód ma istniejące kierunki, przedmioty i perspektywy 1–3', () => {
+  for (const z of A.ZAWODY) {
+    for (const k of z.kier.split(' ')) assert.ok(A.K.find(x => x[0] === k), z.id + ': brak kierunku ' + k);
+    assert.ok([1, 2, 3].includes(z.future), z.id);
+    assert.ok(z.opis && z.trend && z.cluster, z.id);
+  }
+});
+
+test('zawody: odpowiadanie „tak” na wszystko nie podbija dopasowania', () => {
+  const r = A.matchJobs({items: Array(18).fill(5)});
+  for (const z of r) assert.ok(z.score <= 60, z.id + ' ' + z.score);
+});
+
+test('zawody: profil techniczny wskazuje zawody inżynierskie lub IT, opiekuńczy – zdrowie i pomoc', () => {
+  const tech = A.topJobs(A.matchJobs({items: [5,4,2,1,2,3,5,5,2,1,2,3,5,4,3,1,3,3], domains: ['tech'], values: ['zarobki'],
+    str: {mat: 'mocna', fiz: 'mocna', inf: 'mocna'}, people: 0, field: 1}), 3);
+  assert.ok(tech.every(z => ['inz', 'it', 'energia', 'fach'].includes(z.cluster)), tech.map(z => z.id).join());
+  const care = A.topJobs(A.matchJobs({items: [1,2,2,5,3,2,2,3,2,5,2,3,1,2,3,5,2,3], domains: ['zdr', 'spo'], values: ['pomoc'],
+    str: {bio: 'mocna', pol: 'mocna'}, people: 2, field: 1}), 3);
+  assert.ok(care.every(z => ['zdr', 'spo'].includes(z.cluster)), care.map(z => z.id).join());
+});

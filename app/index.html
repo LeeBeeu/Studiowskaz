@@ -29,7 +29,7 @@
       </div>
     </div>
     <nav class="tabs" aria-label="Sekcje">
-      <a href="#dopasuj" data-tab="dopasuj">Dopasuj kierunek</a>
+      <a href="#dopasuj" data-tab="dopasuj">Dopasuj zawód</a>
       <a href="#architektura" data-tab="architektura">Architektura</a>
       <a href="#wnetrza" data-tab="wnetrza">Wnętrza</a>
       <a href="#szukaj" data-tab="szukaj">Wszystkie kierunki</a>
@@ -45,8 +45,8 @@
 
 <main class="wrap">
   <section id="v-dopasuj" hidden>
-    <h2>Jaki kierunek do Ciebie pasuje?</h2>
-    <p class="lead">Odpowiedz na pytania o to, co lubisz robić, co Cię ciekawi i w czym jesteś mocny. Na końcu zobaczysz 3 najlepiej pasujące kierunki, zawody, do których prowadzą, i uczelnie, na których je studiować. Zajmie to ok. 3 minuty.</p>
+    <h2>Jaki zawód do Ciebie pasuje?</h2>
+    <p class="lead">Odpowiedz na pytania o to, co lubisz robić, co Cię ciekawi, co jest dla Ciebie ważne i w czym jesteś mocny. Na końcu zobaczysz 3 najlepiej pasujące zawody z przyszłością, drogę do każdego z nich (studia albo inna ścieżka) i pasujące kierunki studiów. Zajmie to ok. 4 minuty.</p>
     <div class="quiz-bar card" id="quiz-bar"></div>
     <div class="card sec q-sec">
       <h3>1. Co lubisz robić?</h3>
@@ -59,12 +59,17 @@
       <div class="chips" id="q-domains"></div>
     </div>
     <div class="card sec q-sec">
-      <h3>3. Mocne i słabe strony</h3>
+      <h3>3. Co jest dla Ciebie ważne w pracy?</h3>
+      <p class="sub">Wybierz najwyżej 3.</p>
+      <div class="chips" id="q-values"></div>
+    </div>
+    <div class="card sec q-sec">
+      <h3>4. Mocne i słabe strony</h3>
       <p class="sub" id="q-str-note">Oceń przedmioty szkolne.</p>
       <div id="q-str"></div>
     </div>
     <div class="card sec q-sec">
-      <h3>4. Jak chcesz pracować?</h3>
+      <h3>5. Jak chcesz pracować?</h3>
       <div id="q-style"></div>
     </div>
     <div class="card sec q-sec" id="quiz-result"></div>
@@ -155,6 +160,7 @@
 <script src="js/architektura.js"></script>
 <script src="js/wnetrza.js"></script>
 <script src="js/calc.js"></script>
+<script src="js/zawody.js"></script>
 <script src="js/dopasowanie.js"></script>
 <script src="js/app.js"></script>
 </body>
