@@ -1,5 +1,5 @@
 // Interfejs aplikacji Studiowskaz.
-/* global createStore, SUBJ, MANDATORY, K, U, ARCH, AW, AW_FACTS, DETAIL, ARCH_PEWNOSC, TYPES, DEG, DEGS, KMAP, OFFERS, OMAP, compute, status, gains, num, fmt, norm, boosted, archMax */
+/* global QUIZ_ITEMS, LIKERT, DOMAINS, STRENGTH_SUBJ, STRENGTH_LABEL, RIASEC, matchCourses, topDistinct, quizProgress, createStore, SUBJ, MANDATORY, K, U, ARCH, AW, AW_FACTS, DETAIL, ARCH_PEWNOSC, TYPES, DEG, DEGS, KMAP, OFFERS, OMAP, compute, status, gains, num, fmt, norm, boosted, archMax */
 
 /* ===================== STAN ===================== */
 const SAMPLE = {profile: {pol: {pp: 70}, mat: {pp: 78, pr: 52}, obc: {pp: 88, pr: 70}, hsz: {pr: 55}, rys: {pr: 60}},
@@ -100,6 +100,92 @@ function archCard(o, r) {
     <div class="afoot"><span class="pill ${st.cls}">${st.txt}</span><span class="pill ${pw[0]}">${pw[1]}</span>${score}</div>
   </article>`;
 }
+
+/* ===================== DOPASUJ KIERUNEK ===================== */
+const QKEY = KEY + ".quiz";
+let Q = (() => {try {return JSON.parse(localStorage.getItem(QKEY)) || {};} catch (e) {return {};}})();
+Q.items = Q.items || Array(QUIZ_ITEMS.length).fill(null); Q.domains = Q.domains || []; Q.str = Q.str || {};
+function saveQ() {try {localStorage.setItem(QKEY, JSON.stringify(Q));} catch (e) { /* tryb prywatny */ }}
+const SHORT = ["Nie", "Raczej nie", "Trudno powiedzieć", "Raczej tak", "Tak"];
+/** Mocne strony domyślnie z wyników matury (gdy użytkownik nie oceniał sam). */
+function strFromProfile(s) {
+  const p = S.profile[s] || {}; const pr = num(p.pr), pp = num(p.pp);
+  const v = pr != null ? pr + 10 : pp != null ? pp - 10 : null; // PR jest trudniejszy niż PP
+  if (v == null) return null;
+  return v >= 70 ? "mocna" : v >= 45 ? "srednia" : "slaba";
+}
+function quizAnswers() {
+  const str = {}; STRENGTH_SUBJ.forEach(s => {const v = Q.str[s] || strFromProfile(s); if (v) str[s] = v;});
+  return {items: Q.items, domains: Q.domains, str, people: Q.people ?? null, field: Q.field ?? null, long: Q.long ?? null};
+}
+function renderQuiz() {
+  $("#q-items").innerHTML = QUIZ_ITEMS.map(([, t], i) => `<div class="q-item"><p>${esc(t)}</p>
+    <div class="seg" role="group" aria-label="${esc(t)}">${SHORT.map((l, j) => `<button type="button" data-qi="${i}" data-v="${j + 1}" aria-pressed="${Q.items[i] === j + 1}" title="${LIKERT[j]}">${l}</button>`).join("")}</div></div>`).join("");
+  $("#q-domains").innerHTML = Object.entries(DOMAINS).map(([k, v]) => `<button type="button" data-qd="${k}" aria-pressed="${Q.domains.includes(k)}">${esc(v)}</button>`).join("");
+  const anyProf = STRENGTH_SUBJ.some(s => strFromProfile(s));
+  $("#q-str-note").textContent = anyProf ? "Część ocen uzupełniliśmy z Twoich wyników w „Moje wyniki”. Zmień je, jeśli czujesz inaczej." : "Oceń przedmioty szkolne. Możesz pominąć te, których nie masz.";
+  $("#q-str").innerHTML = STRENGTH_SUBJ.map(s => {
+    const cur = Q.str[s] || strFromProfile(s);
+    return `<div class="str-row"><span>${esc(STRENGTH_LABEL[s] || SUBJ[s][0])}</span><div class="seg">${[["mocna", "Mocna"], ["srednia", "Średnia"], ["slaba", "Słaba"]].map(([v, l]) =>
+      `<button type="button" data-qs="${s}" data-v="${v}" aria-pressed="${cur === v}">${l}</button>`).join("")}</div></div>`;
+  }).join("");
+  const styleQ = [
+    ["people", "Z kim chcesz pracować?", [[2, "Głównie z ludźmi"], [1, "Różnie"], [0, "Samodzielnie, z rzeczami lub danymi"]]],
+    ["field", "Gdzie chcesz pracować?", [[0, "Przy biurku"], [1, "Różnie"], [2, "W ruchu, w terenie"]]],
+    ["long", "Czy wchodzą w grę studia 5–6-letnie (np. lekarski, prawo, psychologia)?", [[true, "Tak"], [false, "Wolę krótsze"]]]
+  ];
+  $("#q-style").innerHTML = styleQ.map(([k, q, opts]) => `<div class="style-q"><p>${q}</p><div class="seg">${opts.map(([v, l]) =>
+    `<button type="button" data-qk="${k}" data-v="${v}" aria-pressed="${Q[k] === v}">${l}</button>`).join("")}</div></div>`).join("");
+  renderQuizResult();
+}
+function renderQuizResult() {
+  const pr = quizProgress(Q);
+  $("#quiz-bar").innerHTML = `<span class="sub">Odpowiedzi: <b class="num">${pr.answered}/${pr.total}</b></span><div class="pbar"><i style="width:${pr.answered / pr.total * 100}%"></i></div>` +
+    (pr.ready ? '<button type="button" class="primary" id="q-go">Zobacz wynik ↓</button>' : `<span class="sub">wynik od 8 odpowiedzi</span>`);
+  const go = $("#q-go"); if (go) go.onclick = () => $("#quiz-result").scrollIntoView({behavior: "smooth"});
+  const el = $("#quiz-result");
+  if (!pr.ready) {el.innerHTML = `<h3>Twoje kierunki</h3><p class="sub">Odpowiedz na co najmniej 8 z 12 zdań w części 1, a tu pojawią się 3 najlepiej pasujące kierunki.</p>`; return;}
+  const all = matchCourses(quizAnswers()), top = topDistinct(all, 3);
+  const shown = new Set(top.flatMap(t => [t.id, ...t.similar.map(x => x.id)]));
+  const rest = all.filter(r => !shown.has(r.id)).slice(0, 5);
+  const link = id => id === "arc" ? "#architektura" : id === "aw" ? "#wnetrza" : "#szukaj";
+  el.innerHTML = `<h3>Twoje 3 najlepiej pasujące kierunki</h3>
+    <p class="sub">Wynik jest wskazówką, a nie wyrocznią. Porównuje Twoje odpowiedzi z profilem kierunku: zainteresowania (45%), przedmioty kluczowe dla rekrutacji (30%), dziedziny (15%) i styl pracy (10%).</p>
+    ${top.map((t, i) => `<article class="match ${i === 0 ? "first" : ""}">
+      <header><h3>${i + 1}. ${esc(t.name)}</h3><span class="pct">${t.score}%</span></header>
+      <div class="bar" aria-hidden="true"><i style="width:${t.score}%"></i></div>
+      ${t.why.length ? `<ul>${t.why.map(w => `<li>${esc(w)}</li>`).join("")}</ul>` : ""}
+      ${t.warns.length ? `<p class="warn">Uwaga: ${esc(t.warns.join("; "))}.</p>` : ""}
+      <p class="jobs"><b>Zawody:</b> ${esc(t.jobs)}</p>
+      <p class="sub" style="margin:0"><b>Kluczowe przedmioty:</b> ${esc([...new Set(t.keys.filter(k => k.w >= .2).map(k => k.subs.map(s => STRENGTH_LABEL[s] || SUBJ[s][0]).join(" / ")))].join(", "))}</p>
+      ${t.similar.length ? `<p class="sub" style="margin:0"><b>Podobne kierunki:</b> ${esc(t.similar.map(x => `${x.name} (${x.score}%)`).join(", "))}</p>` : ""}
+      <div class="acts"><a class="btn" href="${link(t.id)}" data-qgo="${esc(t.name)}">Zobacz uczelnie</a></div>
+    </article>`).join("")}
+    ${rest.length ? `<p class="sub" style="margin:16px 0 0"><b>Kolejne dopasowania:</b></p><ol class="more-list" start="4">${rest.map(r => `<li><a href="${link(r.id)}" data-qgo="${esc(r.name)}">${esc(r.name)}</a> · ${r.score}%</li>`).join("")}</ol>` : ""}
+    <div class="tools"><button type="button" id="q-reset">Zacznij od nowa</button></div>`;
+  $("#q-reset").onclick = () => {Q = {items: Array(QUIZ_ITEMS.length).fill(null), domains: [], str: {}}; saveQ(); renderQuiz(); window.scrollTo(0, 0);};
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-qi],[data-qd],[data-qs],[data-qk]");
+  if (b) {
+    if (b.dataset.qi != null) {const i = +b.dataset.qi, v = +b.dataset.v; Q.items[i] = Q.items[i] === v ? null : v;}
+    else if (b.dataset.qd) Q.domains = Q.domains.includes(b.dataset.qd) ? Q.domains.filter(x => x !== b.dataset.qd) : [...Q.domains, b.dataset.qd];
+    else if (b.dataset.qs) Q.str[b.dataset.qs] = b.dataset.v;
+    else {const k = b.dataset.qk, v = b.dataset.v === "true" ? true : b.dataset.v === "false" ? false : +b.dataset.v; Q[k] = Q[k] === v ? null : v;}
+    saveQ();
+    const grp = b.parentElement; grp.querySelectorAll("button").forEach(x => {
+      const on = x.dataset.qd ? Q.domains.includes(x.dataset.qd) : x.dataset.qi != null ? Q.items[+x.dataset.qi] === +x.dataset.v
+        : x.dataset.qs ? (Q.str[x.dataset.qs] || strFromProfile(x.dataset.qs)) === x.dataset.v : String(Q[x.dataset.qk]) === x.dataset.v;
+      x.setAttribute("aria-pressed", on);
+    });
+    renderQuizResult(); return;
+  }
+  const g = e.target.closest("[data-qgo]");
+  if (g && g.getAttribute("href") === "#szukaj") {
+    try {const f = JSON.parse(sessionStorage.getItem(KEY + ".f") || "{}"); f.q = g.dataset.qgo; f["f-city"] = f["f-type"] = f["f-deg"] = f["f-area"] = ""; sessionStorage.setItem(KEY + ".f", JSON.stringify(f));} catch (err) { /* brak pamięci */ }
+    $("#q").value = g.dataset.qgo; ["f-city", "f-type", "f-deg", "f-area"].forEach(id => {$("#" + id).value = "";});
+  }
+});
 
 /* ===================== SZUKAJ ===================== */
 function initFilters() {
@@ -369,20 +455,20 @@ function openSheet(id) {
 }
 
 /* ===================== ROUTING I ZDARZENIA ===================== */
-const VIEWS = ["architektura", "wnetrza", "szukaj", "profil", "plan"];
+const VIEWS = ["dopasuj", "architektura", "wnetrza", "szukaj", "profil", "plan"];
 const curView = () => VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "architektura";
 function route() {
   const v = curView();
   $("#sheet-root").innerHTML = "";
   const sec = v === "wnetrza" ? "architektura" : v;
   if (v === "wnetrza") curDetail = "aw"; else if (v === "architektura") curDetail = "arc";
-  ["architektura", "szukaj", "profil", "plan"].forEach(x => {$("#v-" + x).hidden = x !== sec;});
+  ["dopasuj", "architektura", "szukaj", "profil", "plan"].forEach(x => {$("#v-" + x).hidden = x !== sec;});
   document.querySelectorAll("nav.tabs a").forEach(a => {if (a.dataset.tab === v) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");});
   render(v);
 }
 function render(v) {
   $("#tcount").textContent = S.targets.length;
-  if (v === "architektura" || v === "wnetrza") renderArch(); else if (v === "szukaj") renderSearch(); else if (v === "profil") renderProfile(); else renderPlan();
+  if (v === "dopasuj") renderQuiz(); else if (v === "architektura" || v === "wnetrza") renderArch(); else if (v === "szukaj") renderSearch(); else if (v === "profil") renderProfile(); else renderPlan();
 }
 function refresh() {render(curView());}
 

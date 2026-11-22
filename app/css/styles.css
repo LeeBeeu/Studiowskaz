@@ -191,3 +191,38 @@ textarea{width:100%;min-height:70px;font:500 .8rem var(--f-num);color:var(--ink)
 .or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
 .confirm-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
 @media (max-width:760px){.arch-f{grid-template-columns:1fr 1fr}.facts-dl{grid-template-columns:1fr}.facts-dl dt{margin-top:6px}}
+
+/* Dopasuj kierunek */
+.quiz-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px;margin-bottom:12px}
+#quiz-result{scroll-margin-top:calc(env(safe-area-inset-top,0px) + 150px)}
+.quiz-bar .pbar{flex:1;min-width:120px;height:8px;background:var(--pen-soft);border-radius:4px;overflow:hidden}
+.quiz-bar .pbar i{display:block;height:100%;background:var(--pen)}
+.q-sec{margin-bottom:12px}
+.q-sec h3{font:700 1.05rem var(--f-disp);margin-bottom:2px}
+.q-item{padding:10px 0;border-top:1px solid var(--line)}
+.q-item:first-child{border-top:0}
+.q-item p{margin:0 0 8px}
+.seg{display:flex;gap:4px;flex-wrap:wrap}
+.seg button{flex:1;min-width:0;padding:7px 4px;font-size:.78rem;line-height:1.2;border-radius:7px;white-space:normal;overflow-wrap:anywhere}
+.seg button[aria-pressed="true"]{background:var(--pen);border-color:var(--pen);color:var(--card)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.chips button{border-radius:999px;padding:7px 12px;font-size:.86rem}
+.chips button[aria-pressed="true"]{background:var(--pen);border-color:var(--pen);color:var(--card)}
+.str-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,230px);gap:8px;align-items:center;padding:7px 0;border-top:1px solid var(--line)}
+.str-row:first-child{border-top:0}
+.str-row .seg button[data-v="mocna"][aria-pressed="true"]{background:var(--ok);border-color:var(--ok)}
+.str-row .seg button[data-v="slaba"][aria-pressed="true"]{background:var(--bad);border-color:var(--bad)}
+.style-q{padding:8px 0}
+.style-q p{margin:0 0 6px;font-weight:600}
+.match{border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:12px;display:flex;flex-direction:column;gap:8px}
+.match.first{border-color:var(--pen);box-shadow:0 0 0 1px var(--pen)}
+.match header{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.match header h3{font:800 1.15rem var(--f-disp)}
+.match .pct{font:700 1.3rem var(--f-num);color:var(--pen)}
+.match ul{margin:0;padding-left:1.1em;font-size:.9rem}
+.match .warn{color:var(--warn);font-size:.86rem;margin:0}
+.match .jobs{font-size:.88rem;margin:0}
+.match .acts{display:flex;gap:8px;flex-wrap:wrap}
+.more-list{margin:14px 0 0;padding-left:1.2em;font-size:.9rem;color:var(--muted)}
+.more-list a{color:var(--pen)}
+@media (max-width:760px){.str-row{grid-template-columns:1fr}}

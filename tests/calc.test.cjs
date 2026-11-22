@@ -96,3 +96,22 @@ test('każda uczelnia z architekturą wnętrz ma źródło, opis egzaminu i ofer
     assert.ok(A.OMAP['aw:' + a.id], 'brak oferty ' + a.id);
   }
 });
+
+test('dopasowanie: każdy kierunek ma profil, a wynik jest w zakresie 0–100', () => {
+  for (const k of A.K) assert.ok(A.TRAITS[k[0]], 'brak profilu ' + k[0]);
+  const r = A.matchCourses({items: Array(12).fill(3)});
+  for (const x of r) assert.ok(x.score >= 0 && x.score <= 100, x.id);
+});
+
+test('dopasowanie: profil artystyczny z mocnym rysunkiem wskazuje architekturę wnętrz lub architekturę', () => {
+  const top = A.topDistinct(A.matchCourses({items: [2, 3, 5, 3, 2, 2, 3, 3, 5, 2, 2, 2], domains: ['art'],
+    str: {rys: 'mocna', hsz: 'mocna', mat: 'srednia'}, people: 1, field: 0, long: true}), 3);
+  assert.ok(['aw', 'arc'].includes(top[0].id), top[0].id);
+});
+
+test('dopasowanie: profil społeczny i medyczny wskazuje kierunek o zdrowiu albo psychologię', () => {
+  const top = A.topDistinct(A.matchCourses({items: [1, 2, 2, 5, 3, 2, 2, 3, 2, 5, 2, 3], domains: ['zdr', 'spo'],
+    str: {bio: 'mocna', pol: 'mocna', mat: 'slaba'}, people: 2, field: 1, long: true}), 3);
+  assert.ok(['pie', 'psy', 'fzj', 'pol', 'lek', 'ped'].includes(top[0].id), top[0].id);
+  assert.equal(new Set(top.map(t => t.group)).size, 3);   // trzy różne grupy
+});

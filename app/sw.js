@@ -2,7 +2,7 @@
 // Własne pliki: "najpierw sieć" (po publikacji wystarczy odświeżyć), cache to zapas.
 // Czcionki Google i biblioteki Firebase (wersja w adresie się nie zmienia): "najpierw cache".
 // Przy każdej publikacji podbij VERSION – telefon pokaże pasek „Jest nowa wersja”.
-const VERSION = 'v5';
+const VERSION = 'v6';
 const CACHE = `studiowskaz-${VERSION}`;
 const ASSETS = [
   './',
@@ -15,6 +15,7 @@ const ASSETS = [
   'js/architektura.js',
   'js/wnetrza.js',
   'js/calc.js',
+  'js/dopasowanie.js',
   'js/app.js',
   'icons/icon.svg',
   'icons/icon-192.png',
