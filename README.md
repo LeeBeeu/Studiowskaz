@@ -56,7 +56,7 @@ To osobny projekt, niezależny od Rachunków.
    (wzór jest w komentarzu w tym pliku). Te wartości nie są tajne, dane chronią reguły z kroku 5.
 7. Podbij `VERSION` w `app/sw.js` i wypchnij zmiany na `main`. GitHub Pages opublikuje aplikację.
 
-Model danych: jeden dokument `users/{uid}` na osobę: `{profile, targets, email, name, updatedAt}`.
+Model danych: jeden dokument `users/{uid}` na osobę: `{profile, targets, quiz, email, name, updatedAt}` (`quiz` to odpowiedzi testu „Dopasuj kierunek”).
 Przy pierwszym logowaniu na urządzeniu, na którym wpisano już wyniki, trafiają one do konta.
 Wylogowanie usuwa wyniki z urządzenia (zostają w koncie). W oknie konta jest też „Usuń moje dane z chmury”.
 

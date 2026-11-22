@@ -105,7 +105,10 @@ function archCard(o, r) {
 const QKEY = KEY + ".quiz";
 let Q = (() => {try {return JSON.parse(localStorage.getItem(QKEY)) || {};} catch (e) {return {};}})();
 Q.items = Q.items || Array(QUIZ_ITEMS.length).fill(null); Q.domains = Q.domains || []; Q.str = Q.str || {};
-function saveQ() {try {localStorage.setItem(QKEY, JSON.stringify(Q));} catch (e) { /* tryb prywatny */ }}
+function saveQLocal() {try {localStorage.setItem(QKEY, JSON.stringify(Q));} catch (e) { /* tryb prywatny */ }}
+function saveQ() {saveQLocal(); if (typeof syncSoon === "function") syncSoon();}
+const emptyQ = () => ({items: Array(QUIZ_ITEMS.length).fill(null), domains: [], str: {}});
+const quizAnswered = () => Q.items.some(x => x != null) || Q.domains.length || Object.keys(Q.str).length;
 const SHORT = ["Nie", "Raczej nie", "Trudno powiedzieć", "Raczej tak", "Tak"];
 /** Mocne strony domyślnie z wyników matury (gdy użytkownik nie oceniał sam). */
 function strFromProfile(s) {
@@ -163,7 +166,7 @@ function renderQuizResult() {
     </article>`).join("")}
     ${rest.length ? `<p class="sub" style="margin:16px 0 0"><b>Kolejne dopasowania:</b></p><ol class="more-list" start="4">${rest.map(r => `<li><a href="${link(r.id)}" data-qgo="${esc(r.name)}">${esc(r.name)}</a> · ${r.score}%</li>`).join("")}</ol>` : ""}
     <div class="tools"><button type="button" id="q-reset">Zacznij od nowa</button></div>`;
-  $("#q-reset").onclick = () => {Q = {items: Array(QUIZ_ITEMS.length).fill(null), domains: [], str: {}}; saveQ(); renderQuiz(); window.scrollTo(0, 0);};
+  $("#q-reset").onclick = () => {Q = emptyQ(); saveQ(); renderQuiz(); window.scrollTo(0, 0);};
 }
 document.addEventListener("click", e => {
   const b = e.target.closest("[data-qi],[data-qd],[data-qs],[data-qk]");
@@ -515,7 +518,7 @@ function syncSoon() {
   if (!canSync()) return;
   clearTimeout(syncT); setSync("zapisywanie…");
   syncT = setTimeout(async () => {
-    try {await cloud.save(user, S); setSync("zapisano");} catch (e) {setSync("błąd zapisu");}
+    try {await cloud.save(user, cloudData()); setSync(cloud.quizSynced() ? "zapisano" : "zapisano (bez odpowiedzi testu – zaktualizuj reguły Firebase)");} catch (e) {setSync("błąd zapisu");}
   }, 800);
 }
 function setSync(t) {syncState = t; const el = $("#sync-state"); if (el) el.textContent = t;}
@@ -526,11 +529,15 @@ function updateAcct() {
   b.classList.toggle("warn", !!(user && !user.emailVerified));
   $("#acct-txt").textContent = !user ? "Zaloguj się" : !user.emailVerified ? "Potwierdź e-mail" : (user.name || user.email).split(" ")[0];
 }
+/** Dane wysyłane do konta: wyniki, plan i odpowiedzi testu „Dopasuj kierunek”. */
+function cloudData() {return {profile: S.profile, targets: S.targets, quiz: quizAnswered() ? Q : null};}
 function applyRemote(d) {
   if (!d || !d.profile) return;
   S.profile = d.profile; S.targets = (d.targets || []).filter(id => OMAP[id]); S.example = false;
+  if (d.quiz && Array.isArray(d.quiz.items)) {Q = {...emptyQ(), ...d.quiz}; saveQLocal();}
   saveLocal(); refresh();
 }
+const remoteKey = d => JSON.stringify([d.profile, d.targets, d.quiz || null]);
 async function onUser(u) {
   if (unwatch) {unwatch(); unwatch = null;}
   user = u; updateAcct();
@@ -539,10 +546,10 @@ async function onUser(u) {
     setSync("wczytywanie…");
     const d = await cloud.load(user.uid);
     if (d) applyRemote(d);
-    else if (!S.example) await cloud.save(user, S); // pierwsze logowanie: wyślij to, co już wpisano na tym urządzeniu
+    else if (!S.example || quizAnswered()) await cloud.save(user, cloudData()); // pierwsze logowanie: wyślij to, co już wpisano na tym urządzeniu
     setSync("zapisano");
     unwatch = cloud.watch(user.uid, d2 => {
-      if (JSON.stringify([d2.profile, d2.targets]) !== JSON.stringify([S.profile, S.targets])) applyRemote(d2);
+      const c = cloudData(); if (remoteKey(d2) !== remoteKey({...c, quiz: d2.quiz ? c.quiz : null})) applyRemote(d2);
     });
   } catch (e) {setSync("brak połączenia, zapis lokalny");}
 }
@@ -617,14 +624,14 @@ function openAccount(tab) {
   on("#a-resend", async () => {await cloud.resendVerification(); msg("Wysłaliśmy nowy link.", true);});
   on("#a-out", async () => {
     await cloud.signOut();
-    S = JSON.parse(JSON.stringify(SAMPLE)); saveLocal(); refresh(); close(); // dane zostają w chmurze, nie na tym urządzeniu
+    S = JSON.parse(JSON.stringify(SAMPLE)); Q = emptyQ(); saveLocal(); saveQLocal(); refresh(); close(); // dane zostają w chmurze, nie na tym urządzeniu
   });
   on("#a-del", async () => {$("#del-confirm").hidden = false;});
   on("#a-del-no", async () => {$("#del-confirm").hidden = true;});
   on("#a-del-yes", async () => {
     if (unwatch) {unwatch(); unwatch = null;}
     await cloud.deleteData(user.uid); await cloud.signOut();
-    S = JSON.parse(JSON.stringify(SAMPLE)); saveLocal(); refresh(); close();
+    S = JSON.parse(JSON.stringify(SAMPLE)); Q = emptyQ(); saveLocal(); saveQLocal(); refresh(); close();
   });
 }
 $("#acct").onclick = () => openAccount();

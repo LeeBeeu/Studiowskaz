@@ -3,7 +3,7 @@
 //  - lokalny – gdy firebase-config.js zawiera null; dane tylko w tej przeglądarce (localStorage).
 //
 // Model danych w Firestore (każdy widzi tylko swoje dane, patrz firestore.rules):
-//   users/{uid}  { profile: {przedmiot: {pp, pr}}, targets: [id oferty], email, name, updatedAt }
+//   users/{uid}  { profile: {przedmiot: {pp, pr}}, targets: [id oferty], quiz: {odpowiedzi testu}, email, name, updatedAt }
 /* global FIREBASE_CONFIG */
 
 const FB = 'https://www.gstatic.com/firebasejs/10.12.2';
@@ -45,6 +45,7 @@ async function createCloudStore() {
   const toUser = (u) => ({uid: u.uid, name: u.displayName || u.email, email: norm(u.email), photo: u.photoURL, emailVerified: u.emailVerified});
   const back = () => location.href.split('#')[0];
   const userDoc = (uid) => fs.doc(db, 'users', uid);
+  let quizBlocked = false;
 
   return {
     mode: 'cloud',
@@ -85,11 +86,19 @@ async function createCloudStore() {
       return snap.exists() ? snap.data() : null;
     },
     async save(user, data) {
-      await fs.setDoc(userDoc(user.uid), {
-        profile: data.profile, targets: data.targets, email: user.email, name: user.name || '',
-        updatedAt: fs.serverTimestamp(),
-      });
+      const doc = {profile: data.profile, targets: data.targets, email: user.email, name: user.name || '', updatedAt: fs.serverTimestamp()};
+      if (data.quiz && !quizBlocked) doc.quiz = data.quiz;
+      try {
+        await fs.setDoc(userDoc(user.uid), doc);
+      } catch (e) {
+        // Stare reguły bez pola quiz odrzucają cały zapis – zapisz wtedy wyniki i plan bez odpowiedzi testu.
+        if (e.code !== 'permission-denied' || !doc.quiz) throw e;
+        quizBlocked = true; delete doc.quiz;
+        await fs.setDoc(userDoc(user.uid), doc);
+      }
     },
+    /** false, gdy reguły w Firebase nie pozwalają jeszcze zapisać odpowiedzi testu. */
+    quizSynced() {return !quizBlocked;},
     /** Zmiany z innych urządzeń. Pomija echo własnych, jeszcze niewysłanych zapisów. */
     watch(uid, cb) {
       return fs.onSnapshot(userDoc(uid), (snap) => {
