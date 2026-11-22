@@ -2,184 +2,188 @@
 // Zebrane z uchwał rekrutacyjnych i stron uczelni (rekrutacja 2027/28 tam, gdzie była już dostępna),
 // a gdy ich brakowało, z serwisów zewnętrznych. Każdy wpis ma źródła i poziom pewności.
 //
-// pewnosc: "oficjalne" – wzór z uchwały/strony uczelni; "czesciowe" – wzór znany, ale część
-//          przeliczników jest założeniem; "brak-wzoru" – znamy egzamin i przedmioty, wzoru nie;
-//          "serwis" – dane tylko z serwisów zewnętrznych.
+// pewnosc: "oficjalne" – wzór sprawdzony w uchwale/na stronie uczelni (XI 2026);
+//          "czesciowe" – wzór znany, ale część przeliczników jest założeniem;
+//          "bez-skali" – wzór z uczelni, ale bez skali egzaminu, więc bez liczenia punktów;
+//          "brak-wzoru" – znamy egzamin i przedmioty, wzoru nie;
+//          "serwis" – dane tylko z serwisów zewnętrznych, niesprawdzone u źródła.
 // calc: składniki wzoru do przeliczenia punktów.
-//   matura: {l: etykieta, s: przedmioty (liczy się najlepszy), w: waga, pp/pr: mnożnik wyniku %,
-//            n: ile najlepszych przedmiotów z listy (domyślnie 1)}
+//   matura: {l: etykieta, s: przedmioty (liczy się najlepszy), w: waga,
+//            pp/pr: mnożnik wyniku % (liczy się lepszy z poziomów),
+//            k: zamiast pp/pr lista kombinacji [a, b] → max(a·PP + b·PR) (np. PWr: P, P+1,5R, 2,5R),
+//            max: maksymalna wartość składnika przed wagą (domyślnie 100 × największy mnożnik),
+//            opt: brak przedmiotu daje 0 pkt, ale nie wyklucza z rekrutacji}
 //   egzamin: {l, max, min, w}  – wynik egzaminu rysunkowego w punktach uczelni.
 //   zalozenia: co przyjęliśmy, bo źródło tego nie podaje.
 const ARCH = [
  {
   id: "pw", name: "Politechnika Warszawska", short: "PW", city: "Warszawa", type: "poli", tier: 5, dom: "pw.edu.pl",
   deg: "M", stopien: "jednolite magisterskie (po polsku); Architecture I stopnia po angielsku",
-  rok: "2027/28 (uchwała Senatu PW nr 294/LI/2026); wzór z 2026/27 (uchwała 170/LI/2025)", pewnosc: "czesciowe",
-  wzor: "PK = Psp + 0,75·Pmat + 0,25·Pjo + 0,5·Pwyb1 + 0,5·Pwyb2",
+  rok: "2027/28 – uchwała Senatu PW nr 294/LI/2026 z 24.06.2026, zał. 2, § 1", pewnosc: "oficjalne",
+  wzor: "PK = Psp + Pmat × 0,75 + Pjo × 0,25 + Pwyb1 × 0,5 + Pwyb2 × 0,5",
   calc: {
     matura: [
-      {l: "Matematyka", s: ["mat"], w: .75, pp: .5, pr: 1},
-      {l: "Język obcy", s: ["obc"], w: .25, pp: .5, pr: 1},
-      {l: "Dwa przedmioty do wyboru", s: ["fiz","inf","hsz","geo","his","che","bio","wos","pol","fil"], w: .5, pp: .5, pr: 1, n: 2}
+      {l: "Pmat – matematyka", s: ["mat"], w: .75, pp: .5, pr: 1},
+      {l: "Pjo – język obcy", s: ["obc"], w: .25, pp: .5, pr: 1},
+      {l: "Pwyb1 – grupa 1: fizyka, informatyka, chemia, biologia, geografia", s: ["fiz","inf","che","bio","geo"], w: .5, pp: .5, pr: 1, opt: true},
+      {l: "Pwyb2 – grupa 2: historia, historia sztuki, język polski, filozofia", s: ["his","hsz","pol","fil"], w: .5, pp: .5, pr: 1, opt: true}
     ],
-    egzamin: {l: "Sprawdzian uzdolnień i predyspozycji", max: 200, min: 60, w: 1},
-    zalozenia: "Lista przedmiotów do wyboru jest założeniem. Sprawdź ją w uchwale."
+    egzamin: {l: "Psp – sprawdzian uzdolnień i predyspozycji", max: 200, min: 60, w: 1},
+    zalozenia: "Brak przedmiotu z grupy daje 0 pkt, ale nie wyklucza z rekrutacji. Wynik PP liczy się ×0,5 (§ 2 ust. 5)."
   },
-  egzamin: "Sprawdzian uzdolnień i predyspozycji, w 2026/27 dwa zadania oceniane po 0–100 pkt. Trzeba zdobyć co najmniej 30% punktów ze sprawdzianu. Część źródeł o uchwale na 2027/28 wspomina sprawdzian zdalny w skali 60 pkt, po którym 75 najlepszych przechodzi dalej. Ten szczegół trzeba potwierdzić.",
-  terminy: "Rejestracja 26.04–25.05.2027, decyzje na początku lipca 2027.",
-  limit: "100 miejsc (2025/26)",
-  progi: [["2025","176 pkt w skali 0–225 (maturalnie.pl)"],["2026/27","„co najmniej 200 pkt” wg otouczelnie.pl, dane niespójne"]],
+  egzamin: "Sprawdzian uzdolnień i predyspozycji, 0–200 pkt. Kwalifikuje się tylko ten, kto zdobędzie co najmniej 30% punktów ze sprawdzianu (60 pkt). Na studia po angielsku obowiązuje osobny tryb: zadanie zdalne w skali 60 pkt, potem rozmowa z 75 najlepszymi (40 pkt).",
+  terminy: "Rejestracja 26.04–25.05.2027. Sprawdzian w pierwszej połowie czerwca 2027, wyniki w połowie czerwca. Wyniki kwalifikacji w połowie lipca 2027, dokumenty w drugiej połowie lipca.",
+  limit: "100 miejsc (2025/26, serwisy zewnętrzne)",
+  progi: [["2025","176 pkt w skali 0–225 (maturalnie.pl, inna skala niż obecny wzór)"]],
   zrodla: [
     ["Uchwała Senatu PW 294/LI/2026, zał. 2 (2027/28)","https://www.bip.pw.edu.pl/var/pw/storage/original/application/cb795d397e309dd949d450a52a690266.pdf"],
-    ["Uchwała Senatu PW 170/LI/2025, zał. 2 (2026/27)","https://www.bip.pw.edu.pl/var/pw/storage/original/application/cbdbee40be4f644ec09bf02c3c26ef11.pdf"],
     ["Wydział Architektury PW – kandydaci","https://www.arch.pw.edu.pl/Kandydaci"]
   ]
  },
  {
   id: "pwr", name: "Politechnika Wrocławska", short: "PWr", city: "Wrocław", type: "poli", tier: 4, dom: "pwr.edu.pl",
   deg: "I", stopien: "I stopnia, inżynierskie",
-  rok: "2027/28 (uchwała Senatu PWr nr 384/26/2024-2028)", pewnosc: "czesciowe",
-  wzor: "W = M + PD + 0,1·JO + 0,1·JP + RA",
+  rok: "2027/28 – Warunki i tryb rekrutacji (uchwała Senatu PWr nr 384/26/2024-2028), zał. 1, § 9 i § 12", pewnosc: "oficjalne",
+  wzor: "WI = M + PD + 0,1·JO + 0,1·JP + RA,  M/PD/JO = max(P; P + 1,5R; 2,5R),  JP = max(P; R)",
   calc: {
     matura: [
-      {l: "M – matematyka", s: ["mat"], w: 1, pp: .5, pr: 1},
-      {l: "PD – przedmiot dodatkowy", s: ["fiz","inf","hsz","geo","che"], w: 1, pp: .5, pr: 1},
-      {l: "JO – język obcy", s: ["obc"], w: .1, pp: .5, pr: 1},
-      {l: "JP – język polski", s: ["pol"], w: .1, pp: .5, pr: 1}
+      {l: "M – matematyka", s: ["mat"], w: 1, k: [[1,0],[1,1.5],[0,2.5]]},
+      {l: "PD – fizyka (jedyny przedmiot dodatkowy na architekturze)", s: ["fiz"], w: 1, k: [[1,0],[1,1.5],[0,2.5]], opt: true},
+      {l: "JO – język obcy", s: ["obc"], w: .1, k: [[1,0],[1,1.5],[0,2.5]]},
+      {l: "JP – język polski", s: ["pol"], w: .1, k: [[1,0],[0,1]]}
     ],
     egzamin: {l: "RA – egzamin z rysunku", max: 660, min: 240, w: 1},
-    zalozenia: "Przeliczenie M i PD (PR ×1, PP ×0,5) oraz lista przedmiotów dodatkowych to założenia. Dokładne tabele są w załączniku nr 1."
+    zalozenia: "Maksimum WI bez rysunku to 535 pkt, z rysunkiem 1195 pkt. Bez fizyki PD = 0. Wskaźnik wynosi 0 tylko wtedy, gdy kandydat nie zdawał ani matematyki, ani przedmiotu dodatkowego."
   },
-  egzamin: "Obowiązkowy egzamin z rysunku: dwa zadania ołówkiem, łącznie 0–660 pkt. Do zaliczenia trzeba co najmniej 240 pkt. Niezdany egzamin oznacza niezakwalifikowanie.",
-  terminy: "W 2026: zapisy do 20 czerwca, egzamin 30 czerwca i 1 lipca. Terminy na 2027 ogłasza terminarz rekrutacji.",
-  limit: "180 miejsc (wg otouczelnie.pl, prawdopodobnie 2026/27)",
+  egzamin: "Obowiązkowy egzamin z rysunku na miejscu: dwa zadania ołówkiem, rysunek z natury i rysunek z wyobraźni na temat podany przez komisję. Sprawdza kreowanie przestrzeni trójwymiarowej oraz wiedzę o sztuce i architekturze. Łącznie 0–660 pkt, zdany od 240 pkt. Niezdany egzamin oznacza niezakwalifikowanie. Liczy się tylko egzamin z rekrutacji 2027/28.",
+  terminy: "Terminy podaje terminarz rekrutacji. W 2026 zapisy kończyły się 20.06, a egzamin był 30.06–1.07.",
+  limit: "sprawdź: rekrutacja.pwr.edu.pl → Liczba miejsc",
   progi: [],
   zrodla: [
-    ["Warunki rekrutacji PWr 2027/28 – zał. 1","https://bip.pwr.edu.pl/d/uGBUKOTtQKxVvBFh6GDxYBxZIQnl9XkFABWdbExYbWGFBRAg9RgNtcXccVjU3ClVBDkNKeH5cWFEU/wir_2027_zal_1_dokument_glowny.pdf"],
-    ["Warunki rekrutacji PWr 2027/28 – zał. 2","https://bip.pwr.edu.pl/d/LGBUKOTtQKxVvBFh6GDxYBxZIQnl9XkFABWdbExYbWGFBRAg9RgNtcXccVjU3ClVBDkNKeH5cWFQU/wir_2027_zal_2_inne_matury.pdf"]
+    ["Warunki rekrutacji PWr 2027/28 – zał. 1","https://rekrutacja.pwr.edu.pl/wp-content/uploads/2026/06/WIR-2027_2028-Zalacznik-nr-1-dokument-glowny.pdf"],
+    ["PWr – kryteria przyjęć na studia I stopnia (przedmioty dodatkowe)","https://rekrutacja.pwr.edu.pl/rekrutacja/kryteria-przyjec/kryteria-przyjec-na-studia-i-stopnia/"],
+    ["PWr – egzamin z rysunku","https://rekrutacja.pwr.edu.pl/rekrutacja/egzaminy/egzamin-z-rysunku/"]
   ]
  },
  {
   id: "pk", name: "Politechnika Krakowska", short: "PK", city: "Kraków", type: "poli", tier: 3, dom: "pk.edu.pl",
-  deg: "I", stopien: "I stopnia, inżynierskie (stacjonarne i niestacjonarne)",
-  rok: "strona PK „Wskaźniki rekrutacyjne 2027/28”", pewnosc: "czesciowe",
-  wzor: "W = 2·(M + R + E)   (inne źródła: W = M + 2R + 2E)",
+  deg: "I", stopien: "I stopnia, inżynierskie (po polsku i po angielsku)",
+  rok: "2027/28 – PK „Wskaźniki rekrutacyjne na studia I stopnia 2027/28” i zasady egzaminu wstępnego WA", pewnosc: "oficjalne",
+  wzor: "W = M + 2R + 2E   (M: wynik PR liczony podwójnie; 2R = P dla poziomu podstawowego)",
   calc: {
     matura: [
-      {l: "M – matematyka", s: ["mat"], w: 2, pp: .5, pr: 1},
-      {l: "R – przedmiot charakterystyczny", s: ["fiz","inf","hsz","geo","che"], w: 2, pp: .5, pr: 1}
+      {l: "M – matematyka (PP ×1, PR ×2)", s: ["mat"], w: 1, pp: 1, pr: 2},
+      {l: "2R – język polski, historia albo historia sztuki (nieobowiązkowy)", s: ["pol","his","hsz"], w: 2, pp: .5, pr: 1, opt: true}
     ],
-    egzamin: {l: "E – egzamin z rysunku", max: 100, min: 10, w: 2},
-    zalozenia: "Źródła podają dwie wersje wzoru, przyjęto wersję ze strony PK. Przelicznik PP ×0,5 i lista przedmiotów R to założenia."
+    egzamin: {l: "E – egzamin z predyspozycji architektonicznych", max: 100, min: 10, w: 2},
+    zalozenia: "Maksimum 600 pkt. Brak przedmiotu charakterystycznego daje R = 0, ale nie wyklucza z rekrutacji."
   },
-  egzamin: "Egzamin z rysunku oceniany 0–100 pkt. Warunkiem przyjęcia jest co najmniej 10 pkt. W ostatnich latach była to jedna praca, rysunek z wyobraźni, w jednym dniu.",
-  terminy: "Sprawdź na rekrutacja.pk.edu.pl.",
+  egzamin: "Egzamin wstępny z predyspozycji architektonicznych i uzdolnień artystycznych: jedna praca, rysunek z wyobraźni (kompozycja), w jednym dniu, na brystolu 50×70 cm. Ocena 0–100 pkt według kryteriów: zgodność z tematem, kompozycja, perspektywa i inne. Warunek przyjęcia: co najmniej 10 pkt. Na studia po angielsku trzeba też mieć co najmniej 60% z angielskiego PR albo certyfikat.",
+  terminy: "Egzamin w czerwcu 2027. Dokładny termin ogłoszą najpóźniej miesiąc przed rozpoczęciem.",
   limit: "240 stacjonarne + 30 niestacjonarne (2026/27, wg totu.net.pl, niepotwierdzone)",
-  progi: [["2025/26","282 pkt stacjonarne, 173 pkt niestacjonarne"]],
+  progi: [["2025/26","282 pkt stacjonarne, 173 pkt niestacjonarne (otouczelnie.pl)"]],
   prog: {v: 282, rok: "2025/26"},
   zrodla: [
     ["PK – wskaźniki rekrutacyjne na studia I stopnia 2027/28","https://rekrutacja.pk.edu.pl/rekrutacja/i-stopien/wskazniki-rekrutacyjne-na-studia-i-stopnia-w-roku-akademickim-2026-27/"],
-    ["Domin Kraków – jak dostać się na architekturę PK","https://domin-krakow.pl/jak-dostac-sie-architekture-pk/"]
+    ["PK – zasady egzaminu wstępnego na architekturę","https://rekrutacja.pk.edu.pl/wp-content/uploads/2026/10/Architektura_egzamin-wstepny_zasady.pdf"]
   ]
  },
  {
   id: "pg", name: "Politechnika Gdańska", short: "PG", city: "Gdańsk", type: "poli", tier: 4, dom: "pg.edu.pl",
   deg: "I", stopien: "I stopnia, inżynierskie (po polsku i po angielsku)",
-  rok: "zasady PG (wzór potwierdzony na stronie rekrutacji)", pewnosc: "oficjalne",
-  wzor: "WA = S + W,  W = mat·p + dod·p + 0,1·pol·p + 0,1·obc·p",
+  rok: "PG – „Wzór na liczenie punktów rekrutacyjnych” (strona rekrutacji, stan XI 2026)", pewnosc: "oficjalne",
+  wzor: "WA = W + S,  W = mat·p + dod·p + 0,1·j.polski + 0,1·j.obcy·p   (p: 0,4 PP; 1 PR; 1,3 dwujęzyczny)",
   calc: {
     matura: [
       {l: "Matematyka", s: ["mat"], w: 1, pp: .4, pr: 1},
-      {l: "Przedmiot dodatkowy: historia sztuki albo informatyka", s: ["hsz","inf"], w: 1, pp: .4, pr: 1},
-      {l: "Język polski", s: ["pol"], w: .1, pp: .4, pr: 1},
+      {l: "Przedmiot dodatkowy: historia sztuki albo informatyka", s: ["hsz","inf"], w: 1, pp: .4, pr: 1, opt: true},
+      {l: "Język polski (bez współczynnika p)", s: ["pol"], w: .1, pp: 1, pr: 1},
       {l: "Język obcy", s: ["obc"], w: .1, pp: .4, pr: 1}
     ],
-    egzamin: {l: "S – sprawdzian predyspozycji", max: 100, min: 35, w: 1},
-    zalozenia: "Minimum ze sprawdzianu ustala co roku komisja: 40 pkt w 2023, 35 pkt w 2025 (30 pkt na studiach po angielsku). Matura dwujęzyczna z języka obcego: p = 1,3."
+    egzamin: {l: "S – sprawdzian predyspozycji do zawodu architekta", max: 100, min: 40, w: 1},
+    zalozenia: "Skala sprawdzianu 0–100 pochodzi z wcześniejszych materiałów PG. Minimum ustala co roku komisja: w 2026 było to 40 pkt (po polsku i po angielsku). Brak przedmiotu dodatkowego daje 0 pkt."
   },
-  egzamin: "Sprawdzian predyspozycji do zawodu architekta, 0–100 pkt. Dwie części na arkuszach A3, ołówkiem. Pierwsza część (ok. 2,5 h) to cztery polecenia z projektowania i geometrii przestrzennej, np. obrót sześcianu z prętem o 180°. Wydział publikuje przykładowe testy z lat 2024 i 2025.",
-  terminy: "W 2026 rejestracja trwała 26.05–12.07.",
-  limit: "sprawdź na pg.edu.pl",
-  progi: [["2025","matura (W) ok. 157 pkt, sprawdzian min. 35 pkt (edukreska.pl)"],["2025","148,1 pkt (maturalnie.pl)"]],
+  egzamin: "Sprawdzian predyspozycji do zawodu architekta na arkuszach A3, ołówkiem. Pierwsza część to cztery polecenia z projektowania i geometrii przestrzennej. Wydział publikuje przykładowe testy z lat poprzednich. Wynik poniżej minimum wyklucza z dalszej rekrutacji.",
+  terminy: "W 2026 rejestracja trwała 26.05–12.07, a minimum ze sprawdzianu ogłoszono 17.06.",
+  limit: "sprawdź: pg.edu.pl → Limity i progi",
+  progi: [["2026","minimum ze sprawdzianu 40 pkt (komunikat WKR)"]],
   zrodla: [
     ["PG – wzór na liczenie punktów rekrutacyjnych","https://pg.edu.pl/rekrutacja/rekrutacja-obywatele-polscy/studia-i-stopnia/jak-liczyc-punkty-rekrutacyjne/wzor-na-liczenie-punktow-rekrutacyjnych"],
-    ["Wydział Architektury PG – nabór na I stopień","https://arch.pg.edu.pl/rekrutacja/jak-aplikowac/nabor-na-studia-i-stopnia"],
+    ["PG – informacje dla kandydatów na architekturę","https://pg.edu.pl/rekrutacja/rekrutacja-obywatele-polscy/informacje-dla-kandydatow-na-kierunek-architektura"],
     ["PG – kierunek Architektura","https://pg.edu.pl/rekrutacja/rekrutacja-obywatele-polscy/studia-i-stopnia/wykaz-kierunkow/architektura"]
   ]
  },
  {
   id: "pp", name: "Politechnika Poznańska", short: "PP", city: "Poznań", type: "poli", tier: 4, dom: "put.poznan.pl",
   deg: "I", stopien: "I stopnia, inżynierskie (po polsku i po angielsku)",
-  rok: "2027/28 (strona PP „Wzory rankingowe – rok akademicki 2027/2028”), nowy wzór", pewnosc: "czesciowe",
-  wzor: "W = 0,5·Jp + 0,5·Jo + 2,5·M + R",
+  rok: "2027/28 – PP „Wzory rankingowe – rok akademicki 2027/2028”", pewnosc: "oficjalne",
+  wzor: "W = 0,5·Jp + 0,5·Jo + 2,5·M + R,  M = M podst. + M rozsz.",
   calc: {
     matura: [
-      {l: "Jp – język polski", s: ["pol"], w: .5, pp: .5, pr: 1},
-      {l: "Jo – język obcy", s: ["obc"], w: .5, pp: .5, pr: 1},
-      {l: "M – matematyka", s: ["mat"], w: 2.5, pp: .5, pr: 1}
+      {l: "Jp – język polski (poziom podstawowy)", s: ["pol"], w: .5, k: [[1,0]]},
+      {l: "Jo – język obcy (poziom podstawowy)", s: ["obc"], w: .5, k: [[1,0]]},
+      {l: "M – matematyka: suma wyników PP i PR", s: ["mat"], w: 2.5, k: [[1,1]], max: 200}
     ],
     egzamin: {l: "R – sprawdzenie uzdolnień artystycznych", max: 400, min: 200, w: 1},
-    zalozenia: "Przelicznik PP ×0,5 to założenie, sprawdź zasady PP. Progi z lat ubiegłych liczono starym wzorem: W = Jp + Jo + 1,5M + R, R 0–500."
+    zalozenia: "Maksimum 1000 pkt. Minimum 200/400 z egzaminu pochodzi z serwisu rysunekarchitektura.pl, oficjalna strona go nie podaje. Progi z lat ubiegłych liczono starym wzorem (R 0–500), więc nie da się ich porównać."
   },
-  egzamin: "Egzamin wstępny z rysunku (przeniesienie przestrzeni na płaszczyznę rysunku), 0–400 pkt, minimum 200 pkt. Do systemu wgrywa się też portfolio, a uczelnia może poprosić o oryginały prac.",
+  egzamin: "Sprawdzenie uzdolnień artystycznych, 0–400 pkt: rysunek sprawdzający przeniesienie przestrzeni na płaszczyznę. Do systemu wgrywa się też portfolio.",
   terminy: "W 2026: rejestracja do 21.06, egzamin 24.06.",
   limit: "sprawdź na put.poznan.pl",
-  progi: [["2025/26","591 pkt (stary wzór)"],["2024/25","658 pkt (stary wzór)"],["2022/23","594,5 pkt"]],
+  progi: [["2025/26","591 pkt (stary wzór)"],["2024/25","658 pkt (stary wzór)"]],
   zrodla: [
     ["PP – wzory rankingowe 2027/28","https://put.poznan.pl/rekrutacja/pierwszy-stopien/wzory-rankingowe"],
-    ["RysunekArchitektura – progi punktowe PP 2021–2025","https://www.rysunekarchitektura.pl/progi-punktowe-architektura"]
+    ["RysunekArchitektura – progi i minimum z egzaminu","https://www.rysunekarchitektura.pl/progi-punktowe-architektura"]
   ]
  },
  {
   id: "pl", name: "Politechnika Łódzka", short: "PŁ", city: "Łódź", type: "poli", tier: 3, dom: "p.lodz.pl",
   deg: "I", stopien: "I stopnia, inżynierskie (po polsku i po angielsku)",
-  rok: "zasady 2025/26–2026/27 (uchwała Senatu PŁ 69/2025); rekrutacja 2027/28 startuje 31.03.2027", pewnosc: "czesciowe",
-  wzor: "LP = 6k·M + 2k·JO + 4k·D + U",
+  rok: "2027/28 – uchwała Senatu PŁ nr 101/2026 z 24.06.2026, § 6 wzór (2), zał. 1 i 3", pewnosc: "oficjalne",
+  wzor: "LP = 6·k·LPmatematyka + 2·k·LPjęzyk obcy + 4·k·LPdodatkowy + LPuzdolnień plastycznych   (k: 0,5 PP; 1 PR; język obcy dwujęzyczny 1,5)",
   calc: {
     matura: [
-      {l: "M – matematyka", s: ["mat"], w: 6, pp: .5, pr: 1},
-      {l: "JO – język obcy", s: ["obc"], w: 2, pp: .5, pr: 1},
-      {l: "D – przedmiot dodatkowy", s: ["fiz","inf","hsz","geo","che","his"], w: 4, pp: .5, pr: 1}
+      {l: "Matematyka ×6k", s: ["mat"], w: 6, pp: .5, pr: 1},
+      {l: "Język obcy ×2k", s: ["obc"], w: 2, pp: .5, pr: 1}
     ],
-    egzamin: {l: "U – sprawdzian uzdolnień plastycznych", max: 500, min: 250, w: 1},
-    zalozenia: "Wartości k (PR ×1, PP ×0,5) i lista przedmiotów D to założenia. Nieobecność na sprawdzianie wyklucza z rekrutacji."
+    egzamin: {l: "Sprawdzian uzdolnień plastycznych", max: 500, min: 250, w: 1},
+    zalozenia: "Na architekturze nie ma maturalnego przedmiotu dodatkowego (zał. 1), a składnik 4·k·LPdodatkowy dotyczy tylko dyplomu technika (np. technik renowacji elementów architektury). Maksimum z matury i sprawdzianu: 1300 pkt. Na studiach po angielsku trzeba mieć co najmniej 60% z angielskiego PR albo 30% z dwujęzycznego."
   },
-  egzamin: "Sprawdzian uzdolnień plastycznych, 0–500 pkt, do zaliczenia co najmniej 250. Dwa odręczne rysunki ołówkiem z wyobraźni na zadane tematy, łącznie 5 godzin.",
-  terminy: "W 2026: sprawdzian 25.06, wyniki 1.07, drugi termin 8.09.",
-  limit: "90 miejsc bezpłatnych, stacjonarne (2026/27)",
-  progi: [["2026/27","760 pkt"],["2025/26","761 pkt"]],
+  egzamin: "Sprawdzian uzdolnień plastycznych: dwa odręczne rysunki ołówkiem z wyobraźni na zadane tematy, jeden 50×70 cm, drugi 35×50 cm, łącznie 5 godzin. Kategorie: zgodność z tematem (0–150), kompozycja (0–100), umiejętności rysunkowe (0–100), wrażliwość plastyczna (0–150). Duży format waży 65%, mały 35%. Maksimum 500 pkt, warunek kwalifikacji 250 pkt.",
+  terminy: "Rekrutacja na 2027/28 startuje 31.03.2027. Termin sprawdzianu podaje Portal Kandydata. W 2026 sprawdzian był 25.06.",
+  limit: "90 miejsc bezpłatnych, stacjonarne (2026/27, otouczelnie.pl)",
+  progi: [["2026/27","760 pkt (otouczelnie.pl)"],["2025/26","761 pkt"]],
   prog: {v: 760, rok: "2026/27"},
   zrodla: [
-    ["PŁ – kierunek Architektura","https://rekrutacja.p.lodz.pl/kierunek/i-stopien-architektura"],
-    ["Uchwała Senatu PŁ 69/2025","https://rekrutacja.p.lodz.pl/sites/default/files/2025-07/us_69_2025_18_06_2025.pdf"],
-    ["PŁ – sprawdziany","https://rekrutacja.p.lodz.pl/studia-i-i-ii-stopnia/rekrutuj/sprawdziany-i-rozmowy"]
+    ["Uchwała Senatu PŁ 101/2026 (2027/28)","https://rekrutacja.p.lodz.pl/sites/default/files/2026-06/us_101_2026_24_06_2026.pdf"],
+    ["PŁ – kierunek Architektura","https://rekrutacja.p.lodz.pl/kierunek/i-stopien-architektura"]
   ]
  },
  {
   id: "psl", name: "Politechnika Śląska", short: "PŚl", city: "Gliwice", type: "poli", tier: 3, dom: "polsl.pl",
   deg: "I", stopien: "I stopnia, inżynierskie",
-  rok: "uchwała rekrutacyjna 2025/26", pewnosc: "oficjalne",
-  wzor: "P = Pspr + k·Wm",
+  rok: "2027/28 – uchwała Senatu PŚl nr 34/2026 z 29.06.2026, § 8 ust. 1 pkt 1 i zał. 2", pewnosc: "oficjalne",
+  wzor: "P = Pspr + k·Wm   (Wm: historia sztuki, informatyka albo matematyka; k: 0,5 PP, 1 PR)",
   calc: {
     matura: [
-      {l: "Wm – historia sztuki albo matematyka", s: ["hsz","mat"], w: 1, pp: .5, pr: 1}
+      {l: "Wm – historia sztuki, informatyka albo matematyka", s: ["hsz","inf","mat"], w: 1, pp: .5, pr: 1}
     ],
     egzamin: {l: "Pspr – sprawdzian uzdolnień artystycznych", max: 200, min: 0, w: 1},
-    zalozenia: "Minimum ze sprawdzianu nie jest podane w znalezionych źródłach. Uczelnia nie ustala progów z góry."
+    zalozenia: "Minimum ze sprawdzianu może ustalić Centralna Komisja Rekrutacyjna. Uchwała go nie podaje. Maksimum 300 pkt."
   },
-  egzamin: "Sprawdzian uzdolnień artystycznych na miejscu, 0–200 pkt, dwa zadania rysunkowe jednego dnia (w 2025: 2 lipca). Opłata rekrutacyjna 150 zł.",
-  terminy: "Sprawdź na rekrutacja.polsl.pl.",
+  egzamin: "Sprawdzian uzdolnień artystycznych: dwie prace w różnych technikach, 0–200 pkt. Tematy: odwzorowanie z pamięci (znana przestrzeń miejska, obiekty, detal), rysunek z wyobraźni (place, ulice, wnętrza, krajobraz, formy geometryczne) oraz podstawy geometrii wykreślnej (aksonometria, cienie, odbicia). Opłata rekrutacyjna 150 zł.",
+  terminy: "Sprawdź na rekrutacja.polsl.pl. W 2025 sprawdzian był 2 lipca.",
   limit: "sprawdź na rekrutacja.polsl.pl",
   progi: [["2026/27","150 pkt (otouczelnie.pl, do potwierdzenia)"]],
   prog: {v: 150, rok: "2026/27"},
   zrodla: [
-    ["Uchwała rekrutacyjna PŚl 2025/26","https://rekrutacja.polsl.pl/wp-content/uploads/2024/07/uchwala_rekrutacyjna_2025-2026.pdf"]
+    ["Uchwała Senatu PŚl 34/2026 (2027/28)","https://rekrutacja.polsl.pl/wp-content/uploads/2026/06/uchwala_rekrutacyjna_2027-2028.pdf"]
   ]
  },
  {
   id: "plu", name: "Politechnika Lubelska", short: "PL", city: "Lublin", type: "poli", tier: 2, dom: "pollub.pl",
   deg: "I", stopien: "I stopnia, inżynierskie (stacjonarne i niestacjonarne)",
-  rok: "zasady rekrutacji 2026/27", pewnosc: "czesciowe",
+  rok: "2026/27 wg otouczelnie.pl (uchwały nie udało się pobrać)", pewnosc: "serwis",
   wzor: "LPR = 1,0·M + 0,1·Jp + 0,3·Jo + ER",
   calc: {
     matura: [
@@ -202,7 +206,7 @@ const ARCH = [
  {
   id: "psk", name: "Politechnika Świętokrzyska", short: "PŚk", city: "Kielce", type: "poli", tier: 1, dom: "tu.kielce.pl",
   deg: "I", stopien: "I stopnia, inżynierskie",
-  rok: "zarządzenie Rektora PŚk 33/26 (harmonogram 2026)", pewnosc: "czesciowe",
+  rok: "2026 wg serwisów zewnętrznych (strony uczelni nie udało się pobrać)", pewnosc: "serwis",
   wzor: "S = M + n·W + 0,1·JP + 0,1·JO + E",
   calc: {
     matura: [
@@ -226,18 +230,18 @@ const ARCH = [
  {
   id: "prz", name: "Politechnika Rzeszowska", short: "PRz", city: "Rzeszów", type: "poli", tier: 2, dom: "prz.edu.pl",
   deg: "I", stopien: "I stopnia, inżynierskie",
-  rok: "zasady rekrutacji 2026/27 (uchwała Senatu PRz 63/2025)", pewnosc: "brak-wzoru",
-  wzor: "egzamin z uzdolnień artystycznych ×5 + matematyka (PP ×1, PR ×2) + przedmiot do wyboru",
+  rok: "2026/27 – uchwała Senatu PRz nr 63/2025 (zm. 37/2026) i zarządzenie Rektora 27/2026; zasad na 2027/28 jeszcze nie ma na stronie", pewnosc: "bez-skali",
+  wzor: "R = P1·W + P2·W + 5E   (W: 1 dla PP, 2 dla PR)",
   calc: null,
-  egzamin: "Egzamin wstępny z uzdolnień artystycznych w dwóch etapach (dwa dni), dwie prace rysunkowe na arkuszach 50×70 cm. Z każdego etapu trzeba dostać co najmniej ocenę 3,0. Opłata 150 zł.",
-  terminy: "W 2026: rejestracja 1–19.06, egzamin 25–26.06, wyniki 2.07.",
-  limit: "podany na stronie kierunku w systemie rekrutacji",
-  przedmioty: "matematyka oraz jeden z: fizyka, geografia, historia, historia sztuki",
+  przedmioty: "P1: matematyka. P2: matematyka, historia, historia sztuki, fizyka albo geografia. Brak przedmiotu daje 0 pkt.",
+  egzamin: "Egzamin wstępny z uzdolnień artystycznych w dwóch etapach, każdy 3×60 min, ołówkiem na arkuszu 50×70 cm. Etap 1 to rysunek z natury, etap 2 komponowanie przestrzeni z wyobraźni. Oceniane są: kompozycja, perspektywa, konstrukcja, światłocień, faktura. Trzeba dostać co najmniej 3,0 z każdej pracy. Prace podpisane dostają ocenę niedostateczną. „Wynik końcowy” E liczy się ×5, ale dokumenty nie podają jego skali, więc aplikacja nie liczy punktów.",
+  terminy: "W 2026: rejestracja 1–19.06, egzamin 25–26.06, wyniki 2.07, kwalifikacja 16.07.",
+  limit: "90 miejsc (2026/27)",
   progi: [],
   zrodla: [
     ["PRz – Architektura, stacjonarne I stopnia","https://rekrutacja.prz.edu.pl/kierunek/BAD/architektura-stacjonarne-i-stopnia"],
-    ["PRz – zasady rekrutacji 2026/27","https://rekrutacja.prz.edu.pl/files/2026/zal_do_uch_63_2025_zasady_rekrutacji_2026_2027.pdf"],
-    ["PRz – egzamin wstępny","https://rekrutacja.prz.edu.pl/rekrutacja/egzamin-wstepny"]
+    ["PRz – zarządzenie 27/2026 o egzaminie wstępnym","https://rekrutacja.prz.edu.pl/files/2026/zarz_27_2026_z_29_04_2026_w_spr_proced_egz_wstepn_kier_architektura_2026_2027.pdf"],
+    ["PRz – zasady rekrutacji 2026/27","https://rekrutacja.prz.edu.pl/files/2026/zal_do_uch_63_2025_zasady_rekrutacji_2026_2027.pdf"]
   ]
  },
  {
@@ -366,6 +370,7 @@ const ARCH = [
 const ARCH_PEWNOSC = {
   "oficjalne": ["ok", "wzór z uczelni"],
   "czesciowe": ["warn", "wzór z uczelni, część założeń"],
+  "bez-skali": ["warn", "wzór z uczelni, bez skali egzaminu"],
   "brak-wzoru": ["info", "bez pełnego wzoru"],
   "serwis": ["info", "dane z serwisów"]
 };

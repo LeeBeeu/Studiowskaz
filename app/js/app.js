@@ -35,7 +35,7 @@ function renderArch() {
   $("#rys-out").textContent = rys == null ? "—" : rys + "%";
   $("#rys-hint").textContent = rys == null
     ? "Przesuń suwak. Bez wyniku z rysunku nie da się policzyć punktów, bo egzamin decyduje o przyjęciu."
-    : "Ten sam procent przeliczamy na skalę każdej uczelni, np. 60% to 120/200 pkt na PW i 396/660 pkt na PWr.";
+    : "Ten sam procent przeliczamy na skalę każdej uczelni, np. 60% to 120/200 pkt na PW, 396/660 pkt na PWr i 300/500 pkt na PŁ.";
   const type = $("#a-type").value, sort = $("#a-sort").value;
   let list = OFFERS.filter(o => o.arch && (type === "all" || (type === "prv" ? o.u.type === "prv" : o.u.type !== "prv")))
     .map(o => ({o, r: compute(o, S.profile)}));
@@ -47,9 +47,9 @@ function renderArch() {
   $("#arch-facts").innerHTML = [
     `Architekturę prowadzi ${pub} uczelni publicznych w bazie i ${ARCH.length - pub} niepublicznych. Na każdej uczelni publicznej obowiązuje egzamin z rysunku. Bez jego zaliczenia nie ma przyjęcia, niezależnie od matury.`,
     examShareText(),
-    "Z matury najczęściej liczy się matematyka i język obcy. Przedmiot dodatkowy to zwykle historia sztuki, fizyka, informatyka albo geografia.",
+    "Z matury prawie wszędzie liczy się matematyka, a rozszerzenie z niej daje najwięcej (PWr ×2,5, PK ×2, PP suma podstawy i rozszerzenia). Przedmiot dodatkowy różni się między uczelniami: PWr tylko fizyka, PG historia sztuki albo informatyka, PK język polski, historia albo historia sztuki, PŁ żadnego.",
     "Egzaminy z rysunku odbywają się pod koniec czerwca i na początku lipca, a zapisy na nie kończą się wcześniej niż zwykła rekrutacja. W 2026 roku zapisy na PWr kończyły się 20 czerwca, a na PRz 19 czerwca.",
-    "PW prowadzi architekturę po polsku jako studia jednolite magisterskie (rejestracja 26.04–25.05.2027). Pozostałe politechniki prowadzą studia I stopnia inżynierskie. PG, PP, PŁ i PW mają też wersję anglojęzyczną."
+    "PW prowadzi architekturę po polsku jako studia jednolite magisterskie: rejestracja 26.04–25.05.2027, sprawdzian w pierwszej połowie czerwca. Pozostałe politechniki prowadzą studia I stopnia inżynierskie. PG, PP, PŁ, PK i PW mają też wersję anglojęzyczną."
   ].map(t => `<li>${esc(t)}</li>`).join("");
 }
 function examShareText() {
@@ -289,7 +289,7 @@ function archSheetBody(o, r) {
       ${a.prog ? `<div><div class="l">Próg ${esc(a.prog.rok)}</div><div class="v" style="color:var(--muted)">${a.prog.v}</div></div>` : ""}</div>
     <div class="tw"><table class="parts"><thead><tr><th>Składnik</th><th>Liczony wynik</th><th class="r">Punkty</th></tr></thead><tbody>
       ${r.parts.map(p => `<tr><td>${esc(p.t.l)}${p.t.w !== 1 ? ` <span class="formula">×${fmt(p.t.w, 2).replace(/,?0+$/, "")}</span>` : ""}</td>
-        <td>${p.sub ? `${esc(SUBJ[p.sub][0])} ${p.lvl} ${p.pct}%${p.lvl === "PP" && p.t.pp !== 1 ? ` <span class="formula">×${fmt(p.t.pp, 2).replace(/,?0+$/, "")}</span>` : ""}` : '<span class="pill bad">brak</span>'}</td>
+        <td>${p.sub ? `${esc(SUBJ[p.sub][0])} ${p.lvl === "PP+PR" ? `PP ${p.pp}% + PR ${p.pr}%` : `${p.lvl} ${p.pct}%`}${!p.t.k && p.lvl === "PP" && p.t.pp !== 1 ? ` <span class="formula">×${fmt(p.t.pp, 2).replace(/,?0+$/, "")}</span>` : ""}${!p.t.k && p.lvl === "PR" && p.t.pr !== 1 ? ` <span class="formula">×${fmt(p.t.pr, 2).replace(/,?0+$/, "")}</span>` : ""}` : p.opt ? '<span class="pill info">nie zdajesz · 0 pkt</span>' : '<span class="pill bad">brak</span>'}</td>
         <td class="r num">${fmt(p.pts)} / ${fmt(p.max, 0)}</td></tr>`).join("")}
       ${r.exam ? `<tr><td>${esc(r.exam.e.l)}${r.exam.w !== 1 ? ` <span class="formula">×${r.exam.w}</span>` : ""}</td>
         <td>${r.exam.pct == null ? '<span class="pill bad">brak wyniku</span>' : `${r.exam.pct}% → ${fmt(r.exam.pts, 0)} pkt${r.exam.e.min ? ` (min. ${r.exam.e.min})` : ""}`}</td>

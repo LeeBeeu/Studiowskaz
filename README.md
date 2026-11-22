@@ -31,7 +31,9 @@ npm run artifact # składa app.html – wersję jednoplikową do publikacji jako
 
 ## Dane
 
-- `app/js/architektura.js`: baza architektury. Stan: listopad 2026, rekrutacja 2027/28 tam, gdzie uczelnie już ją opublikowały.
+- `app/js/architektura.js`: baza architektury. Stan: listopad 2026.
+  Wzory sprawdzone w uchwałach i na stronach uczelni (rekrutacja 2027/28): PW, PWr, PK, PG, PP, PŁ, PŚl.
+  PRz: wzór z zasad 2026/27, bez skali egzaminu. Pozostałe uczelnie: dane z serwisów zewnętrznych, niesprawdzone u źródła.
   Pole `pewnosc` mówi, skąd jest wzór. Pole `calc.zalozenia` opisuje, co przyjęto, gdy źródło czegoś nie podawało
   (najczęściej przelicznik wyniku z poziomu podstawowego).
 - `app/js/data.js`: baza ogólna kierunków i uczelni.

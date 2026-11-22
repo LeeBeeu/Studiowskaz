@@ -24,14 +24,22 @@ U.forEach(u => {
 });
 
 /* ---------- architektura: punkty w skali uczelni ---------- */
+function combos(t) {return t.k || [[t.pp, 0], [0, t.pr]];}
+function termMax(t) {return t.max != null ? t.max : 100 * Math.max(...combos(t).map(([x, y]) => x + y));}
 function archMax(c) {
-  return c.matura.reduce((a, t) => a + t.w * 100 * (t.n || 1), 0) + (c.egzamin ? c.egzamin.w * c.egzamin.max : 0);
+  return c.matura.reduce((a, t) => a + t.w * termMax(t) * (t.n || 1), 0) + (c.egzamin ? c.egzamin.w * c.egzamin.max : 0);
 }
 function subjBest(prof, s, t) {
   const p = prof[s] || {}; const pr = num(p.pr), pp = num(p.pp);
-  const a = pr != null ? pr * t.pr : -1, b = pp != null ? pp * t.pp : -1;
-  if (a < 0 && b < 0) return null;
-  return a >= b ? {sub: s, lvl: "PR", pct: pr, val: a} : {sub: s, lvl: "PP", pct: pp, val: b};
+  if (pr == null && pp == null) return null;
+  let best = null;
+  combos(t).forEach(([x, y]) => {
+    if ((x && pp == null && !y) || (y && pr == null && !x)) return;
+    const v = x * (pp ?? 0) + y * (pr ?? 0);
+    const lvl = x && y ? (pr == null ? "PP" : pp == null ? "PR" : "PP+PR") : x ? "PP" : "PR";
+    if (!best || v > best.val) best = {sub: s, lvl, pct: lvl === "PP" ? pp : lvl === "PR" ? pr : null, pp, pr, val: v};
+  });
+  return best;
 }
 function archCompute(a, prof) {
   const c = a.calc;
@@ -40,8 +48,8 @@ function archCompute(a, prof) {
   c.matura.forEach(t => {
     const n = t.n || 1;
     const got = t.s.map(s => subjBest(prof, s, t)).filter(Boolean).sort((x, y) => y.val - x.val).slice(0, n);
-    got.forEach(g => {points += t.w * g.val; parts.push({t, ...g, pts: t.w * g.val, max: t.w * 100});});
-    for (let i = got.length; i < n; i++) {missing.push(t); parts.push({t, sub: null, lvl: null, pts: 0, max: t.w * 100});}
+    got.forEach(g => {points += t.w * g.val; parts.push({t, ...g, pts: t.w * g.val, max: t.w * termMax(t)});});
+    for (let i = got.length; i < n; i++) {if (!t.opt) missing.push(t); parts.push({t, sub: null, lvl: null, pts: 0, max: t.w * termMax(t), opt: !!t.opt});}
   });
   let exam = null, examBelow = false;
   if (c.egzamin) {
@@ -117,4 +125,4 @@ function gains(o, prof) {
   return out.sort((a, b) => b.d - a.d);
 }
 
-if (typeof module !== "undefined") module.exports = {KMAP, UMAP, OFFERS, OMAP, compute, archCompute, archMax, status, gains, num, fmt, norm, boosted, CEL};
+if (typeof module !== "undefined") module.exports = {KMAP, UMAP, OFFERS, OMAP, compute, archCompute, archMax, termMax, status, gains, num, fmt, norm, boosted, CEL};
