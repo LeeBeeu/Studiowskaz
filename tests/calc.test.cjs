@@ -81,3 +81,18 @@ test('przedmiot nieobowiązkowy daje 0 pkt, ale nie blokuje', () => {
   const pd = r.parts.find(p => p.t.l.startsWith('PD'));
   assert.equal(pd.pts, 0);
 });
+
+test('architektura wnętrz: PP i PŚl liczą punkty wzorem uczelni', () => {
+  const aw = id => A.AW.find(a => a.id === id);
+  assert.equal(A.archMax(aw('pp').calc), 1000);
+  assert.equal(A.archMax(aw('psl').calc), 300);
+  const r = A.compute(A.OMAP['aw:psl'], {hsz: {pr: 70}, mat: {pp: 80}, rys: {pr: 50}});
+  assert.equal(r.points, 100 + 70);   // Pspr 50% z 200 + hsz PR 70
+});
+
+test('każda uczelnia z architekturą wnętrz ma źródło, opis egzaminu i ofertę w wyszukiwarce', () => {
+  for (const a of A.AW) {
+    assert.ok(a.zrodla.length > 0 && a.egzamin, a.id);
+    assert.ok(A.OMAP['aw:' + a.id], 'brak oferty ' + a.id);
+  }
+});

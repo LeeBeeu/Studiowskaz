@@ -6,6 +6,8 @@ pełna baza kierunku **architektura** i ranking przedmiotów, które najbardziej
 - **Architektura**: 22 uczelnie (16 publicznych, 6 niepublicznych). Przy każdej: wzór rekrutacyjny, egzamin z rysunku
   (format, skala, minimum), terminy, limit miejsc, progi z lat ubiegłych, źródła i poziom pewności danych.
   Punkty liczone są w skali danej uczelni. Suwak „przewidywany wynik z rysunku” przelicza się na każdą skalę.
+- **Wnętrza**: 17 uczelni z architekturą wnętrz (14 publicznych, w tym 7 akademii sztuk pięknych, oraz 3 niepubliczne):
+  egzaminy (teczka, egzamin praktyczny, rozmowa), terminy, limity, progi i źródła. PP i PŚl liczą punkty wzorem uczelni.
 - **Wszystkie kierunki**: ok. 70 kierunków na 61 uczelniach z filtrami (miasto, typ uczelni, stopień, dziedzina).
   Wagi przedmiotów to uproszczony model typowych zasad, nie wzory uczelni.
 - **Moje wyniki**: przewidywane wyniki matury (PP i PR) i rysunku.
@@ -70,6 +72,8 @@ npm run artifact # składa app.html – wersję jednoplikową do publikacji jako
   PRz: wzór z zasad 2026/27, bez skali egzaminu. Pozostałe uczelnie: dane z serwisów zewnętrznych, niesprawdzone u źródła.
   Pole `pewnosc` mówi, skąd jest wzór. Pole `calc.zalozenia` opisuje, co przyjęto, gdy źródło czegoś nie podawało
   (najczęściej przelicznik wyniku z poziomu podstawowego).
+- `app/js/wnetrza.js`: baza architektury wnętrz. Wzory PP i PŚl sprawdzone w dokumentach na 2027/28,
+  pozostałe dane z wyszukiwarki (głównie rekrutacja 2026/27), oznaczone w aplikacji jako „do sprawdzenia”.
 - `app/js/data.js`: baza ogólna kierunków i uczelni.
 
 Przed złożeniem dokumentów zawsze sprawdź uchwałę rekrutacyjną uczelni. Linki są w szczegółach każdej uczelni.

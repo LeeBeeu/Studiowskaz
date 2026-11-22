@@ -1,5 +1,5 @@
 // Interfejs aplikacji Studiowskaz.
-/* global createStore, SUBJ, MANDATORY, K, U, ARCH, ARCH_PEWNOSC, TYPES, DEG, DEGS, KMAP, OFFERS, OMAP, compute, status, gains, num, fmt, norm, boosted, archMax */
+/* global createStore, SUBJ, MANDATORY, K, U, ARCH, AW, AW_FACTS, DETAIL, ARCH_PEWNOSC, TYPES, DEG, DEGS, KMAP, OFFERS, OMAP, compute, status, gains, num, fmt, norm, boosted, archMax */
 
 /* ===================== STAN ===================== */
 const SAMPLE = {profile: {pol: {pp: 70}, mat: {pp: 78, pr: 52}, obc: {pp: 88, pr: 70}, hsz: {pr: 55}, rys: {pr: 60}},
@@ -29,34 +29,62 @@ function officialLink(o) {
   return "https://www.google.com/search?q=" + encodeURIComponent(q);
 }
 
-/* ===================== ARCHITEKTURA ===================== */
+/* ===================== PEŁNE BAZY: ARCHITEKTURA I WNĘTRZA ===================== */
+let curDetail = "arc";
+const DETAIL_UI = {
+  arc: {
+    title: "Architektura w Polsce",
+    lead: "Wszystkie uczelnie z kierunkiem architektura, ich wzory rekrutacyjne, egzaminy z rysunku, limity i progi. Punkty są liczone w skali każdej uczelni z Twoich wyników i przewidywanego wyniku z rysunku.",
+    slider: "Przewidywany wynik egzaminu z rysunku (% maksimum)",
+    factsTitle: "Co zdawać na architekturę",
+    facts: () => {
+      const pub = ARCH.filter(a => a.type !== "prv").length;
+      return [
+        `Architekturę prowadzi ${pub} uczelni publicznych w bazie i ${ARCH.length - pub} niepublicznych. Na każdej uczelni publicznej obowiązuje egzamin z rysunku. Bez jego zaliczenia nie ma przyjęcia, niezależnie od matury.`,
+        examShareText(ARCH, "egzamin z rysunku"),
+        "Z matury prawie wszędzie liczy się matematyka, a rozszerzenie z niej daje najwięcej (PWr ×2,5, PK ×2, PP suma podstawy i rozszerzenia). Przedmiot dodatkowy różni się między uczelniami: PWr tylko fizyka, PG historia sztuki albo informatyka, PK język polski, historia albo historia sztuki, PŁ żadnego.",
+        "Egzaminy z rysunku odbywają się pod koniec czerwca i na początku lipca, a zapisy na nie kończą się wcześniej niż zwykła rekrutacja. W 2026 roku zapisy na PWr kończyły się 20 czerwca, a na PRz 19 czerwca.",
+        "PW prowadzi architekturę po polsku jako studia jednolite magisterskie: rejestracja 26.04–25.05.2027, sprawdzian w pierwszej połowie czerwca. Pozostałe politechniki prowadzą studia I stopnia inżynierskie. PG, PP, PŁ, PK i PW mają też wersję anglojęzyczną."
+      ];
+    }
+  },
+  aw: {
+    title: "Architektura wnętrz w Polsce",
+    lead: "Uczelnie z kierunkiem architektura wnętrz: akademie sztuk pięknych, politechniki i uniwersytety. Przy każdej opis egzaminu (teczka, egzamin praktyczny, rozmowa), terminy, limity i źródła. Tam, gdzie wzór łączy maturę z egzaminem, punkty liczone są w skali uczelni.",
+    slider: "Przewidywany wynik egzaminu praktycznego (% maksimum)",
+    factsTitle: "Co zdawać na architekturę wnętrz",
+    facts: () => {
+      const pub = AW.filter(a => a.type !== "prv").length;
+      return [`Architekturę wnętrz prowadzi ${pub} uczelni publicznych w bazie i ${AW.length - pub} niepublicznych. Wszędzie, poza częścią uczelni niepublicznych, obowiązuje egzamin praktyczny albo ocena prac.`]
+        .concat(AW_FACTS, [examShareText(AW, "egzamin praktyczny")]);
+    }
+  }
+};
 function renderArch() {
+  const ui = DETAIL_UI[curDetail], det = DETAIL[curDetail];
+  $("#d-title").textContent = ui.title; $("#d-lead").textContent = ui.lead;
+  $("#d-slider").textContent = ui.slider; $("#d-facts-title").textContent = ui.factsTitle;
   const rys = num((S.profile.rys || {}).pr);
   $("#rys-in").value = rys ?? 0;
   $("#rys-out").textContent = rys == null ? "—" : rys + "%";
+  const ex = det.list.filter(a => a.calc && a.calc.egzamin).slice(0, 3).map(a => `${Math.round((rys ?? 60) / 100 * a.calc.egzamin.max)}/${a.calc.egzamin.max} pkt na ${a.short}`);
   $("#rys-hint").textContent = rys == null
-    ? "Przesuń suwak. Bez wyniku z rysunku nie da się policzyć punktów, bo egzamin decyduje o przyjęciu."
-    : "Ten sam procent przeliczamy na skalę każdej uczelni, np. 60% to 120/200 pkt na PW, 396/660 pkt na PWr i 300/500 pkt na PŁ.";
+    ? "Przesuń suwak. Bez wyniku z egzaminu nie da się policzyć punktów, bo egzamin decyduje o przyjęciu."
+    : `Ten sam procent przeliczamy na skalę każdej uczelni, np. ${rys}% to ${ex.join(", ")}. Wynik zapisuje się w „Moje wyniki” i jest wspólny dla architektury i wnętrz.`;
   const type = $("#a-type").value, sort = $("#a-sort").value;
-  let list = OFFERS.filter(o => o.arch && (type === "all" || (type === "prv" ? o.u.type === "prv" : o.u.type !== "prv")))
+  let list = OFFERS.filter(o => o.arch && o.k.id === curDetail && (type === "all" || (type === "prv" ? o.u.type === "prv" : o.u.type !== "prv")))
     .map(o => ({o, r: compute(o, S.profile)}));
   list.sort((a, b) => sort === "name" ? a.o.u.name.localeCompare(b.o.u.name, "pl")
     : sort === "city" ? a.o.u.city.localeCompare(b.o.u.city, "pl")
     : (b.r.noCalc ? -1 : b.r.index) - (a.r.noCalc ? -1 : a.r.index));
   $("#arch-list").innerHTML = list.map(({o, r}) => archCard(o, r)).join("");
-  const pub = ARCH.filter(a => a.type !== "prv").length;
-  $("#arch-facts").innerHTML = [
-    `Architekturę prowadzi ${pub} uczelni publicznych w bazie i ${ARCH.length - pub} niepublicznych. Na każdej uczelni publicznej obowiązuje egzamin z rysunku. Bez jego zaliczenia nie ma przyjęcia, niezależnie od matury.`,
-    examShareText(),
-    "Z matury prawie wszędzie liczy się matematyka, a rozszerzenie z niej daje najwięcej (PWr ×2,5, PK ×2, PP suma podstawy i rozszerzenia). Przedmiot dodatkowy różni się między uczelniami: PWr tylko fizyka, PG historia sztuki albo informatyka, PK język polski, historia albo historia sztuki, PŁ żadnego.",
-    "Egzaminy z rysunku odbywają się pod koniec czerwca i na początku lipca, a zapisy na nie kończą się wcześniej niż zwykła rekrutacja. W 2026 roku zapisy na PWr kończyły się 20 czerwca, a na PRz 19 czerwca.",
-    "PW prowadzi architekturę po polsku jako studia jednolite magisterskie: rejestracja 26.04–25.05.2027, sprawdzian w pierwszej połowie czerwca. Pozostałe politechniki prowadzą studia I stopnia inżynierskie. PG, PP, PŁ, PK i PW mają też wersję anglojęzyczną."
-  ].map(t => `<li>${esc(t)}</li>`).join("");
+  $("#arch-facts").innerHTML = ui.facts().map(t => `<li>${esc(t)}</li>`).join("");
 }
-function examShareText() {
-  const sh = ARCH.filter(a => a.calc && a.calc.egzamin).map(a => ({a, p: a.calc.egzamin.w * a.calc.egzamin.max / archMax(a.calc) * 100})).sort((x, y) => x.p - y.p);
+function examShareText(L, what) {
+  const sh = L.filter(a => a.calc && a.calc.egzamin).map(a => ({a, p: a.calc.egzamin.w * a.calc.egzamin.max / archMax(a.calc) * 100})).sort((x, y) => x.p - y.p);
+  if (!sh.length) return "";
   const lo = sh[0], hi = sh[sh.length - 1];
-  return `Tam, gdzie znamy wzór, egzamin z rysunku to od ${fmt(lo.p, 0)}% (${lo.a.short}) do ${fmt(hi.p, 0)}% (${hi.a.short}) maksymalnej liczby punktów: ` +
+  return `Tam, gdzie znamy wzór, ${what} to od ${fmt(lo.p, 0)}% (${lo.a.short}) do ${fmt(hi.p, 0)}% (${hi.a.short}) maksymalnej liczby punktów: ` +
     sh.map(x => `${x.a.short} ${fmt(x.p, 0)}%`).join(", ") + ". Zwykle to przedmiot numer jeden do ćwiczenia.";
 }
 function archCard(o, r) {
@@ -341,18 +369,20 @@ function openSheet(id) {
 }
 
 /* ===================== ROUTING I ZDARZENIA ===================== */
-const VIEWS = ["architektura", "szukaj", "profil", "plan"];
+const VIEWS = ["architektura", "wnetrza", "szukaj", "profil", "plan"];
 const curView = () => VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "architektura";
 function route() {
   const v = curView();
   $("#sheet-root").innerHTML = "";
-  VIEWS.forEach(x => {$("#v-" + x).hidden = x !== v;});
+  const sec = v === "wnetrza" ? "architektura" : v;
+  if (v === "wnetrza") curDetail = "aw"; else if (v === "architektura") curDetail = "arc";
+  ["architektura", "szukaj", "profil", "plan"].forEach(x => {$("#v-" + x).hidden = x !== sec;});
   document.querySelectorAll("nav.tabs a").forEach(a => {if (a.dataset.tab === v) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");});
   render(v);
 }
 function render(v) {
   $("#tcount").textContent = S.targets.length;
-  if (v === "architektura") renderArch(); else if (v === "szukaj") renderSearch(); else if (v === "profil") renderProfile(); else renderPlan();
+  if (v === "architektura" || v === "wnetrza") renderArch(); else if (v === "szukaj") renderSearch(); else if (v === "profil") renderProfile(); else renderPlan();
 }
 function refresh() {render(curView());}
 
@@ -385,7 +415,7 @@ $("#import-p").onclick = () => {
     $("#tcount").textContent = S.targets.length; $("#io-msg").textContent = "Wczytano profil i plan.";
   } catch (e) {$("#io-msg").textContent = "Ten kod jest niepoprawny. Skopiuj go jeszcze raz w całości.";}
 };
-$("#db-note").innerHTML = `Baza: <b>${ARCH.length}</b> uczelni z architekturą (wzory, egzaminy, progi i źródła) oraz <b>${K.length - 1}</b> innych kierunków w <b>${OFFERS.length - ARCH.length}</b> ofertach na <b>${U.length}</b> uczelniach. Dla architektury punkty liczone są wzorami uczelni, a przy każdej uczelni opisano założenia i poziom pewności danych. Pozostałe kierunki używają uproszczonego modelu wag, a „realna szansa” to szacunek, nie oficjalny próg. Przed złożeniem dokumentów sprawdź uchwałę rekrutacyjną uczelni.`;
+$("#db-note").innerHTML = `Baza: <b>${ARCH.length}</b> uczelni z architekturą i <b>${AW.length}</b> z architekturą wnętrz (wzory, egzaminy, progi i źródła) oraz <b>${K.length - 2}</b> innych kierunków w <b>${OFFERS.length - ARCH.length - AW.length}</b> ofertach na <b>${U.length}</b> uczelniach. Dla architektury i wnętrz punkty liczone są wzorami uczelni tam, gdzie je znamy, a przy każdej uczelni opisano poziom pewności danych. Pozostałe kierunki używają uproszczonego modelu wag, a „realna szansa” to szacunek, nie oficjalny próg. Przed złożeniem dokumentów sprawdź zasady rekrutacji uczelni.`;
 initFilters();
 window.addEventListener("hashchange", route);
 route();

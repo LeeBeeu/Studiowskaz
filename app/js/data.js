@@ -5,7 +5,7 @@ const SUBJ = {
   bio:["Biologia","BIO"], che:["Chemia","CHE"], fiz:["Fizyka","FIZ"], geo:["Geografia","GEO"],
   his:["Historia","HIS"], wos:["Wiedza o społeczeństwie","WOS"], inf:["Informatyka","INF"],
   hsz:["Historia sztuki","HSZ"], fil:["Filozofia","FIL"], lac:["Język łaciński i kultura antyczna","LAC"],
-  rys:["Egzamin z rysunku (na uczelni)","RYS"]
+  rys:["Egzamin z rysunku / praktyczny (na uczelni)","RYS"]
 };
 const MANDATORY = ["pol","mat","obc"];
 const PPM = 0.5; // przelicznik wyniku z poziomu podstawowego
@@ -87,6 +87,7 @@ const K = [
  ["les","Leśnictwo","Rolnicze i weterynaryjne",2,{d:["I","bio|geo:.5;mat|che:.3;obc:.2"]}],
  ["tzz","Technologia żywności i żywienie człowieka","Rolnicze i weterynaryjne",2,{d:["I","bio|che:.5;mat:.3;obc:.2"]}],
  ["ogr","Ogrodnictwo","Rolnicze i weterynaryjne",1,{d:["I","bio|che|geo:.6;mat:.2;obc:.2"]}],
+ ["aw","Architektura wnętrz","Techniczne",3,{d:["L","rys:.6;mat|hsz|inf:.25;obc:.15"]}],
  ["akr","Architektura krajobrazu","Rolnicze i weterynaryjne",2,{d:["I","bio|geo|mat:.4;rys:.4;obc:.2"]}]
 ];
 

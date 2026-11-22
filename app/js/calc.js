@@ -1,6 +1,6 @@
 // Obliczenia: wskaźnik modelowy dla kierunków z bazy ogólnej i punkty wg wzorów uczelni dla architektury.
 // Działa w przeglądarce (globalne stałe z data.js i architektura.js) i w testach (node).
-/* global SUBJ, K, U, ARCH, TYPES, DEGS, PPM */
+/* global SUBJ, K, U, ARCH, AW, TYPES, DEGS, PPM */
 const KMAP = {}; K.forEach(k => KMAP[k[0]] = {id: k[0], name: k[1], area: k[2], pop: k[3], v: k[4], celBase: k[5]});
 const UMAP = {}; U.forEach(u => UMAP[u[0]] = {id: u[0], name: u[1], short: u[2], city: u[3], type: u[4], tier: u[5], dom: u[6]});
 const parseF = s => s.split(";").map(p => {const [a, w] = p.split(":"); const pr = a.startsWith("!"); return {subs: (pr ? a.slice(1) : a).split("|"), w: +w, pr};});
@@ -13,7 +13,7 @@ const OFFERS = [];
 U.forEach(u => {
   const uu = UMAP[u[0]];
   [...new Set(u[7].split(/\s+/).filter(Boolean))].forEach(kid => {
-    const k = KMAP[kid]; if (!k || kid === "arc") return;
+    const k = KMAP[kid]; if (!k || kid === "arc" || kid === "aw") return;
     const [deg, f] = k.v[uu.type] || k.v.d;
     let comp = Math.max(1, Math.min(5, Math.round(k.pop * .55 + uu.tier * .45)));
     let cel = k.celBase ? k.celBase - (5 - uu.tier) * 2 : CEL[comp];
@@ -62,14 +62,20 @@ function archCompute(a, prof) {
   const max = archMax(c);
   return {index: points / max * 100, points, max, parts, missing, exam, examBelow, sw: 1};
 }
-ARCH.forEach(a => {
+// Kierunki z pełną bazą (wzory uczelni): architektura i architektura wnętrz.
+const DETAIL = {
+  arc: {list: ARCH, prefix: "arch:", pop: 4},
+  aw: {list: AW, prefix: "aw:", pop: 3}
+};
+Object.entries(DETAIL).forEach(([kid, d]) => d.list.forEach(a => {
   const u = {id: a.id, name: a.name, short: a.short, city: a.city, type: a.type, tier: a.tier, dom: a.dom};
-  let cel = CEL[Math.max(1, Math.min(5, Math.round(4 * .55 + a.tier * .45)))], celSrc = "szacunek";
+  let cel = CEL[Math.max(1, Math.min(5, Math.round(d.pop * .55 + a.tier * .45)))], celSrc = "szacunek";
   if (a.prog && a.calc) {cel = a.prog.v / archMax(a.calc) * 100; celSrc = "próg " + a.prog.rok;}
   if (a.type === "prv") cel = 0;
-  OFFERS.push({id: "arch:" + a.id, arch: a, u, k: KMAP.arc, deg: a.deg, cel, celSrc, comp: 4,
-    text: norm(["architektura", KMAP.arc.area, a.name, a.short, a.city, TYPES[a.type], DEGS[a.deg]].join(" "))});
-});
+  const k = KMAP[kid];
+  OFFERS.push({id: d.prefix + a.id, arch: a, u, k, deg: a.deg, cel, celSrc, comp: 4,
+    text: norm([k.name, k.area, a.name, a.short, a.city, TYPES[a.type], DEGS[a.deg]].join(" "))});
+}));
 const OMAP = {}; OFFERS.forEach(o => OMAP[o.id] = o);
 
 /* ---------- model ogólny ---------- */
@@ -125,4 +131,4 @@ function gains(o, prof) {
   return out.sort((a, b) => b.d - a.d);
 }
 
-if (typeof module !== "undefined") module.exports = {KMAP, UMAP, OFFERS, OMAP, compute, archCompute, archMax, termMax, status, gains, num, fmt, norm, boosted, CEL};
+if (typeof module !== "undefined") module.exports = {DETAIL, KMAP, UMAP, OFFERS, OMAP, compute, archCompute, archMax, termMax, status, gains, num, fmt, norm, boosted, CEL};

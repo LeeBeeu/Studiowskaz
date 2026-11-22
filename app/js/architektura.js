@@ -371,6 +371,7 @@ const ARCH_PEWNOSC = {
   "oficjalne": ["ok", "wzór z uczelni"],
   "czesciowe": ["warn", "wzór z uczelni, część założeń"],
   "bez-skali": ["warn", "wzór z uczelni, bez skali egzaminu"],
+  "wyszukiwarka": ["info", "z wyszukiwarki, do sprawdzenia"],
   "brak-wzoru": ["info", "bez pełnego wzoru"],
   "serwis": ["info", "dane z serwisów"]
 };

@@ -30,6 +30,7 @@
     </div>
     <nav class="tabs" aria-label="Sekcje">
       <a href="#architektura" data-tab="architektura">Architektura</a>
+      <a href="#wnetrza" data-tab="wnetrza">Wnętrza</a>
       <a href="#szukaj" data-tab="szukaj">Wszystkie kierunki</a>
       <a href="#profil" data-tab="profil">Moje wyniki</a>
       <a href="#plan" data-tab="plan">Plan nauki <span class="cnt num" id="tcount">0</span></a>
@@ -43,10 +44,10 @@
 
 <main class="wrap">
   <section id="v-architektura" hidden>
-    <h2>Architektura w Polsce</h2>
-    <p class="lead">Wszystkie uczelnie z kierunkiem architektura, ich wzory rekrutacyjne, egzaminy z rysunku, limity i progi. Punkty są liczone w skali każdej uczelni z Twoich wyników i przewidywanego wyniku z rysunku.</p>
+    <h2 id="d-title">Architektura w Polsce</h2>
+    <p class="lead" id="d-lead"></p>
     <div class="card sec rys-box">
-      <label class="lbl" for="rys-in">Przewidywany wynik egzaminu z rysunku (% maksimum)</label>
+      <label class="lbl" for="rys-in" id="d-slider">Przewidywany wynik egzaminu z rysunku (% maksimum)</label>
       <div class="rys-row">
         <input id="rys-in" type="range" min="0" max="100" step="1">
         <output id="rys-out" class="num">—</output>
@@ -67,7 +68,7 @@
     </div>
     <div class="arch-grid" id="arch-list"></div>
     <div class="card sec" style="margin-top:16px">
-      <h2>Co zdawać na architekturę</h2>
+      <h2 id="d-facts-title">Co zdawać na architekturę</h2>
       <ul class="facts" id="arch-facts"></ul>
     </div>
   </section>
@@ -125,6 +126,7 @@
 <script src="js/store.js"></script>
 <script src="js/data.js"></script>
 <script src="js/architektura.js"></script>
+<script src="js/wnetrza.js"></script>
 <script src="js/calc.js"></script>
 <script src="js/app.js"></script>
 </body>
