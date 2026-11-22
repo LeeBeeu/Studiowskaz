@@ -1,14 +1,16 @@
 // Service worker aplikacji Studiowskaz: działa offline.
 // Własne pliki: "najpierw sieć" (po publikacji wystarczy odświeżyć), cache to zapas.
-// Czcionki Google: "najpierw cache".
+// Czcionki Google i biblioteki Firebase (wersja w adresie się nie zmienia): "najpierw cache".
 // Przy każdej publikacji podbij VERSION – telefon pokaże pasek „Jest nowa wersja”.
-const VERSION = 'v2';
+const VERSION = 'v3';
 const CACHE = `studiowskaz-${VERSION}`;
 const ASSETS = [
   './',
   'index.html',
   'manifest.webmanifest',
   'css/styles.css',
+  'js/firebase-config.js',
+  'js/store.js',
   'js/data.js',
   'js/architektura.js',
   'js/calc.js',
@@ -39,7 +41,8 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
 
-  if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') {
+  if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com'
+      || (url.hostname === 'www.gstatic.com' && url.pathname.startsWith('/firebasejs/'))) {
     event.respondWith(
       caches.open('studiowskaz-fonts').then(async (cache) => {
         const hit = await cache.match(request);

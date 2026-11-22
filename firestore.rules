@@ -1,0 +1,26 @@
+rules_version = '2';
+
+// Reguły dostępu do danych Studiowskaza.
+// Wklej całość w konsoli Firebase: Firestore Database → Rules → Publish.
+//
+// Każdy zalogowany użytkownik widzi i zmienia tylko swój dokument users/{uid}
+// (wyniki matury i wybrane kierunki). Konto e-mail musi mieć potwierdzony adres.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    match /users/{uid} {
+      allow read, delete: if signedIn() && request.auth.uid == uid;
+
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['profile', 'targets', 'email', 'name', 'updatedAt'])
+        && request.resource.data.profile is map
+        && request.resource.data.targets is list
+        && request.resource.data.targets.size() <= 200;
+    }
+  }
+}

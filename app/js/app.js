@@ -1,5 +1,5 @@
 // Interfejs aplikacji Studiowskaz.
-/* global SUBJ, MANDATORY, K, U, ARCH, ARCH_PEWNOSC, TYPES, DEG, DEGS, KMAP, OFFERS, OMAP, compute, status, gains, num, fmt, norm, boosted, archMax */
+/* global createStore, SUBJ, MANDATORY, K, U, ARCH, ARCH_PEWNOSC, TYPES, DEG, DEGS, KMAP, OFFERS, OMAP, compute, status, gains, num, fmt, norm, boosted, archMax */
 
 /* ===================== STAN ===================== */
 const SAMPLE = {profile: {pol: {pp: 70}, mat: {pp: 78, pr: 52}, obc: {pp: 88, pr: 70}, hsz: {pr: 55}, rys: {pr: 60}},
@@ -13,7 +13,8 @@ function load() {
   } catch (e) { /* brak dostępu do pamięci */ }
   return JSON.parse(JSON.stringify(SAMPLE));
 }
-function save() {try {localStorage.setItem(KEY, JSON.stringify(S));} catch (e) { /* tryb prywatny */ }}
+function saveLocal() {try {localStorage.setItem(KEY, JSON.stringify(S));} catch (e) { /* tryb prywatny */ }}
+function save() {saveLocal(); if (typeof syncSoon === "function") syncSoon();}
 const isTarget = id => S.targets.includes(id);
 function toggleTarget(id) {S.targets = isTarget(id) ? S.targets.filter(x => x !== id) : [...S.targets, id]; save(); refresh();}
 
@@ -388,6 +389,133 @@ $("#db-note").innerHTML = `Baza: <b>${ARCH.length}</b> uczelni z architekturą (
 initFilters();
 window.addEventListener("hashchange", route);
 route();
+
+/* ===================== KONTO I SYNCHRONIZACJA ===================== */
+// Tryb lokalny: przycisk konta jest ukryty. Tryb chmury: po zalogowaniu wyniki i plan
+// zapisują się w Firestore (users/{uid}) i są takie same na każdym urządzeniu.
+let cloud = null, user = null, unwatch = null, syncT = null, syncState = "";
+const canSync = () => cloud && cloud.mode === "cloud" && user && user.emailVerified;
+function syncSoon() {
+  if (!canSync()) return;
+  clearTimeout(syncT); setSync("zapisywanie…");
+  syncT = setTimeout(async () => {
+    try {await cloud.save(user, S); setSync("zapisano");} catch (e) {setSync("błąd zapisu");}
+  }, 800);
+}
+function setSync(t) {syncState = t; const el = $("#sync-state"); if (el) el.textContent = t;}
+function updateAcct() {
+  const b = $("#acct"); if (!cloud || cloud.mode !== "cloud") {b.hidden = true; return;}
+  b.hidden = false;
+  b.classList.toggle("on", !!(user && user.emailVerified));
+  b.classList.toggle("warn", !!(user && !user.emailVerified));
+  $("#acct-txt").textContent = !user ? "Zaloguj się" : !user.emailVerified ? "Potwierdź e-mail" : (user.name || user.email).split(" ")[0];
+}
+function applyRemote(d) {
+  if (!d || !d.profile) return;
+  S.profile = d.profile; S.targets = (d.targets || []).filter(id => OMAP[id]); S.example = false;
+  saveLocal(); refresh();
+}
+async function onUser(u) {
+  if (unwatch) {unwatch(); unwatch = null;}
+  user = u; updateAcct();
+  if (!canSync()) return;
+  try {
+    setSync("wczytywanie…");
+    const d = await cloud.load(user.uid);
+    if (d) applyRemote(d);
+    else if (!S.example) await cloud.save(user, S); // pierwsze logowanie: wyślij to, co już wpisano na tym urządzeniu
+    setSync("zapisano");
+    unwatch = cloud.watch(user.uid, d2 => {
+      if (JSON.stringify([d2.profile, d2.targets]) !== JSON.stringify([S.profile, S.targets])) applyRemote(d2);
+    });
+  } catch (e) {setSync("brak połączenia, zapis lokalny");}
+}
+const AUTH_ERR = {
+  "auth/invalid-credential": "Nieprawidłowy e-mail albo hasło.",
+  "auth/wrong-password": "Nieprawidłowe hasło.",
+  "auth/user-not-found": "Nie ma konta z tym adresem. Załóż je w zakładce „Załóż konto”.",
+  "auth/email-already-in-use": "To konto już istnieje. Zaloguj się albo zresetuj hasło.",
+  "auth/weak-password": "Hasło musi mieć co najmniej 6 znaków.",
+  "auth/invalid-email": "To nie wygląda na poprawny adres e-mail.",
+  "auth/too-many-requests": "Za dużo prób. Spróbuj ponownie za kilka minut.",
+  "auth/network-request-failed": "Brak połączenia z internetem.",
+  "auth/unauthorized-domain": "Ta domena nie jest dodana w Firebase (Authentication → Settings → Authorized domains)."
+};
+const authErr = e => AUTH_ERR[e && e.code] || "Coś poszło nie tak. Spróbuj ponownie.";
+function openAccount(tab) {
+  tab = tab || "in";
+  const body = !user ? `
+    <p class="sub">Zaloguj się, żeby Twoje wyniki i wybrane kierunki były na każdym urządzeniu. Bez logowania zapisują się tylko na tym telefonie.</p>
+    <button class="google-btn" id="g-in" type="button"><svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Zaloguj przez Google</button>
+    <div class="or">albo e-mailem</div>
+    <div class="auth-tabs" role="tablist">
+      <button type="button" role="tab" data-tab-auth="in" aria-selected="${tab === "in"}">Logowanie</button>
+      <button type="button" role="tab" data-tab-auth="up" aria-selected="${tab === "up"}">Załóż konto</button>
+    </div>
+    <form class="auth-form" id="auth-form" novalidate>
+      ${tab === "up" ? '<label class="lbl" for="a-name">Imię<input id="a-name" autocomplete="given-name"></label>' : ""}
+      <label class="lbl" for="a-mail">E-mail<input id="a-mail" type="email" autocomplete="email" required></label>
+      <label class="lbl" for="a-pass">Hasło<input id="a-pass" type="password" autocomplete="${tab === "up" ? "new-password" : "current-password"}" minlength="6" required></label>
+      <button class="primary" type="submit">${tab === "up" ? "Załóż konto" : "Zaloguj się"}</button>
+      ${tab === "in" ? '<button class="ghost" type="button" id="a-reset">Nie pamiętam hasła</button>' : '<p class="sub" style="margin:0">Na podany adres wyślemy link potwierdzający. Po kliknięciu go wróć tutaj.</p>'}
+    </form>`
+  : !user.emailVerified ? `
+    <p>Konto <b>${esc(user.email)}</b> czeka na potwierdzenie.</p>
+    <p class="sub">Kliknij link w mailu od Firebase (sprawdź też folder spam), a potem wróć tutaj i naciśnij „Już potwierdziłem”.</p>
+    <div class="confirm-row"><button class="primary" id="a-check" type="button">Już potwierdziłem</button>
+      <button id="a-resend" type="button">Wyślij link jeszcze raz</button><button class="ghost" id="a-out" type="button">Wyloguj</button></div>`
+  : `
+    <p><b>${esc(user.name || "")}</b><br><span class="sub">${esc(user.email)}</span></p>
+    <p class="sub">Synchronizacja: <span id="sync-state">${esc(syncState || "zapisano")}</span>. Wyniki i plan są takie same na każdym urządzeniu, na którym się zalogujesz.</p>
+    <div class="confirm-row"><button id="a-out" type="button">Wyloguj</button><button class="ghost" id="a-del" type="button">Usuń moje dane z chmury</button></div>
+    <div id="del-confirm" hidden class="confirm-row"><span class="sub">Na pewno? Wyniki i plan znikną z chmury i z tego urządzenia.</span>
+      <button class="primary" id="a-del-yes" type="button">Usuń</button><button id="a-del-no" type="button">Anuluj</button></div>`;
+  $("#sheet-root").innerHTML = `<div class="sheet-bg" id="sbg"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="ac-t">
+    <header><div><h2 id="ac-t">Twoje konto</h2></div><button class="ghost" id="sh-x" type="button" aria-label="Zamknij">✕</button></header>
+    ${body}<p class="auth-msg" id="a-msg" role="status"></p></div></div>`;
+  const msg = (t, ok) => {const m = $("#a-msg"); m.textContent = t; m.className = "auth-msg " + (ok ? "ok" : "err");};
+  const close = () => {$("#sheet-root").innerHTML = "";};
+  $("#sbg").onclick = e => {if (e.target.id === "sbg") close();};
+  $("#sh-x").onclick = close;
+  const on = (id, fn) => {const el = $(id); if (el) el.onclick = async () => {try {await fn();} catch (e) {msg(authErr(e));}};};
+  on("#g-in", async () => {await cloud.signIn();});
+  document.querySelectorAll("[data-tab-auth]").forEach(b => b.onclick = () => openAccount(b.dataset.tabAuth));
+  const f = $("#auth-form");
+  if (f) f.onsubmit = async e => {
+    e.preventDefault();
+    const mail = $("#a-mail").value, pass = $("#a-pass").value;
+    if (!mail || pass.length < 6) {msg("Podaj e-mail i hasło (co najmniej 6 znaków)."); return;}
+    try {
+      if (tab === "up") {await cloud.signUpEmail(mail, pass, ($("#a-name") || {}).value || ""); msg("Wysłaliśmy link potwierdzający na " + mail + ".", true);}
+      else await cloud.signInEmail(mail, pass);
+    } catch (err) {msg(authErr(err));}
+  };
+  on("#a-reset", async () => {
+    const mail = $("#a-mail").value; if (!mail) {msg("Wpisz najpierw swój e-mail."); return;}
+    await cloud.resetPassword(mail); msg("Wysłaliśmy link do zmiany hasła na " + mail + ".", true);
+  });
+  on("#a-check", async () => {
+    const u = await cloud.refreshUser();
+    if (u && u.emailVerified) {await onUser(u); openAccount();} else msg("Adres nie jest jeszcze potwierdzony. Kliknij link w mailu.");
+  });
+  on("#a-resend", async () => {await cloud.resendVerification(); msg("Wysłaliśmy nowy link.", true);});
+  on("#a-out", async () => {
+    await cloud.signOut();
+    S = JSON.parse(JSON.stringify(SAMPLE)); saveLocal(); refresh(); close(); // dane zostają w chmurze, nie na tym urządzeniu
+  });
+  on("#a-del", async () => {$("#del-confirm").hidden = false;});
+  on("#a-del-no", async () => {$("#del-confirm").hidden = true;});
+  on("#a-del-yes", async () => {
+    if (unwatch) {unwatch(); unwatch = null;}
+    await cloud.deleteData(user.uid); await cloud.signOut();
+    S = JSON.parse(JSON.stringify(SAMPLE)); saveLocal(); refresh(); close();
+  });
+}
+$("#acct").onclick = () => openAccount();
+createStore().then(st => {
+  cloud = st; updateAcct();
+  if (st.mode === "cloud") st.onAuth(u => {onUser(u); if ($("#ac-t")) openAccount();});
+});
 
 /* ===================== PWA ===================== */
 let deferredPrompt = null;
