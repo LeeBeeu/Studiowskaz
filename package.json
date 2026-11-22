@@ -1,0 +1,11 @@
+{
+  "name": "studiowskaz",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Wymagania rekrutacyjne polskich uczelni, baza architektury i plan nauki do matury (PWA)",
+  "scripts": {
+    "start": "node server.cjs",
+    "test": "node --test \"tests/*.test.cjs\"",
+    "artifact": "node tools/build-artifact.cjs"
+  }
+}

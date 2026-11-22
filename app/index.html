@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Studiowskaz</title>
+  <meta name="description" content="Wymagania rekrutacyjne polskich uczelni, baza architektury i plan nauki do matury.">
+  <meta name="theme-color" content="#2645c9" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0f1320" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Studiowskaz">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+  <style>[hidden]{display:none!important}body{margin:0}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <h1><span>Studiowskaz</span></h1>
+      <p>wymagania rekrutacyjne polskich uczelni i plan nauki do matury</p>
+      <button type="button" class="ghost" id="install" hidden>Zainstaluj aplikację</button>
+    </div>
+    <nav class="tabs" aria-label="Sekcje">
+      <a href="#architektura" data-tab="architektura">Architektura</a>
+      <a href="#szukaj" data-tab="szukaj">Wszystkie kierunki</a>
+      <a href="#profil" data-tab="profil">Moje wyniki</a>
+      <a href="#plan" data-tab="plan">Plan nauki <span class="cnt num" id="tcount">0</span></a>
+    </nav>
+  </div>
+</header>
+
+<div class="update-bar" id="update-bar" hidden>
+  <span>Jest nowa wersja aplikacji.</span><button type="button" class="primary" id="update-btn">Odśwież</button>
+</div>
+
+<main class="wrap">
+  <section id="v-architektura" hidden>
+    <h2>Architektura w Polsce</h2>
+    <p class="lead">Wszystkie uczelnie z kierunkiem architektura, ich wzory rekrutacyjne, egzaminy z rysunku, limity i progi. Punkty są liczone w skali każdej uczelni z Twoich wyników i przewidywanego wyniku z rysunku.</p>
+    <div class="card sec rys-box">
+      <label class="lbl" for="rys-in">Przewidywany wynik egzaminu z rysunku (% maksimum)</label>
+      <div class="rys-row">
+        <input id="rys-in" type="range" min="0" max="100" step="1">
+        <output id="rys-out" class="num">—</output>
+      </div>
+      <p class="sub" id="rys-hint"></p>
+    </div>
+    <div class="filters arch-f">
+      <label class="lbl">Pokaż<select id="a-type">
+        <option value="pub">Uczelnie publiczne</option>
+        <option value="all">Wszystkie</option>
+        <option value="prv">Tylko niepubliczne</option>
+      </select></label>
+      <label class="lbl">Sortuj<select id="a-sort">
+        <option value="pct">Mój wynik (% maksimum)</option>
+        <option value="name">Nazwa uczelni</option>
+        <option value="city">Miasto</option>
+      </select></label>
+    </div>
+    <div class="arch-grid" id="arch-list"></div>
+    <div class="card sec" style="margin-top:16px">
+      <h2>Co zdawać na architekturę</h2>
+      <ul class="facts" id="arch-facts"></ul>
+    </div>
+  </section>
+
+  <section id="v-szukaj" hidden>
+    <h2>Gdzie i z czego zdawać</h2>
+    <p class="lead">Wpisz kierunek, uczelnię albo miasto. Przy każdej uczelni widzisz wymagane przedmioty, swój wskaźnik rekrutacyjny i orientacyjny poziom, który daje realną szansę. Gwiazdką dodajesz kierunek do planu nauki.</p>
+    <div class="filters">
+      <label class="lbl q">Szukaj<input id="q" type="search" placeholder="np. informatyka, prawo Kraków, AGH" autocomplete="off"></label>
+      <label class="lbl">Miasto<select id="f-city"></select></label>
+      <label class="lbl">Typ uczelni<select id="f-type"></select></label>
+      <label class="lbl">Stopień<select id="f-deg"></select></label>
+      <label class="lbl">Dziedzina<select id="f-area"></select></label>
+    </div>
+    <label class="chk"><input type="checkbox" id="f-ok"> Pokaż tylko oferty, na które mam wszystkie wymagane przedmioty</label>
+    <div class="summary"><span id="sum"></span><button class="ghost" id="reset-f" type="button">Wyczyść filtry</button></div>
+    <div class="stack" id="results"></div>
+  </section>
+
+  <section id="v-profil" hidden>
+    <h2>Moje wyniki matury</h2>
+    <p class="lead">Wpisz przewidywane albo uzyskane wyniki w procentach. Zostaw puste pola przedmiotów, których nie zdajesz. Wszystko zapisuje się tylko na tym urządzeniu.</p>
+    <p class="note" id="example-note">To przykładowy profil kandydata na architekturę. Zastąp liczby swoimi albo kliknij „Wyczyść wszystko”.</p>
+    <div class="card tw">
+      <table class="ptable" id="ptable">
+        <thead><tr><th>Przedmiot</th><th>Podstawa (PP) %</th><th>Rozszerzenie (PR) %</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="note" style="margin-top:14px" id="rules-note"></div>
+    <div class="tools">
+      <button type="button" id="clear-p">Wyczyść wszystko</button>
+      <button type="button" id="sample-p">Wczytaj przykład</button>
+      <button type="button" id="export-p">Skopiuj kod profilu</button>
+    </div>
+    <div style="margin-top:14px">
+      <label class="lbl" for="import-box">Przenieś profil na inne urządzenie: wklej kod i kliknij „Wczytaj kod”</label>
+      <textarea id="import-box" spellcheck="false"></textarea>
+      <div class="tools" style="margin-top:6px"><button type="button" id="import-p">Wczytaj kod</button><span id="io-msg" class="sub"></span></div>
+    </div>
+  </section>
+
+  <section id="v-plan" hidden>
+    <h2>Plan nauki</h2>
+    <p class="lead">Ranking przedmiotów liczony z wzorów rekrutacyjnych kierunków oznaczonych gwiazdką. Na górze jest to, co najbardziej podnosi Twój wynik na najwięcej wybranych kierunkach.</p>
+    <div id="plan-body"></div>
+  </section>
+
+  <p class="note" style="margin-top:28px" id="db-note"></p>
+</main>
+
+<div id="sheet-root"></div>
+
+<script src="js/data.js"></script>
+<script src="js/architektura.js"></script>
+<script src="js/calc.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
