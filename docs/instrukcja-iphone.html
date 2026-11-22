@@ -1,0 +1,134 @@
+<title>Studiowskaz na iPhonie</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&display=swap">
+<style>
+/* Układ: jedna kolumna jak ekran telefonu; kroki w kolejności, w jakiej się je robi, zakreślacz na tym, co trzeba stuknąć */
+:root{
+  --paper:#f4f5f1; --card:#ffffff; --ink:#18203a; --muted:#5b6377; --line:#d8dbe2;
+  --pen:#2645c9; --pen-soft:#e5eafb; --mark:#f3e96a; --mark-ink:#18203a; --ok:#1d7f48; --warn-soft:#fbefd9; --warn:#8a520a;
+  --f-disp:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --f-body:"Instrument Sans","Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0f1320; --card:#171d2d; --ink:#e7eaf3; --muted:#9aa2b7; --line:#2b3348;
+  --pen:#8ea4ff; --pen-soft:#222c4d; --mark:#5c5718; --mark-ink:#fff8b8; --ok:#5fd08f; --warn-soft:#3a2b13; --warn:#f0b45a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0f1320; --card:#171d2d; --ink:#e7eaf3; --muted:#9aa2b7; --line:#2b3348;
+  --pen:#8ea4ff; --pen-soft:#222c4d; --mark:#5c5718; --mark-ink:#fff8b8; --ok:#5fd08f; --warn-soft:#3a2b13; --warn:#f0b45a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font:16px/1.55 var(--f-body)}
+.wrap{max-width:620px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 56px}
+h1{font:800 clamp(1.8rem,7vw,2.4rem)/1.05 var(--f-disp);margin:0 0 10px;letter-spacing:-.02em;text-wrap:balance}
+h1 span{background:linear-gradient(transparent 58%,var(--mark) 58%);color:inherit}
+h2{font:700 1.25rem/1.2 var(--f-disp);margin:34px 0 10px;text-wrap:balance}
+p{margin:0 0 10px}
+.lead{color:var(--muted);font-size:1.02rem}
+.hl{background:var(--mark);color:var(--mark-ink);padding:0 4px;border-radius:3px;font-weight:600;white-space:nowrap}
+.addr{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:14px 0}
+.addr code{font:600 1.02rem/1.3 ui-monospace,"SFMono-Regular",Menlo,monospace;color:var(--pen);overflow-wrap:anywhere;flex:1;min-width:0}
+button{font:600 .92rem var(--f-body);border-radius:10px;border:1px solid var(--pen);background:var(--pen);color:var(--card);padding:9px 14px;cursor:pointer}
+button:focus-visible,a:focus-visible{outline:3px solid var(--pen);outline-offset:2px}
+.qr{display:flex;gap:16px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:10px}
+#qrcode{background:#fff;padding:8px;border-radius:8px;flex:none;line-height:0}
+#qrcode img,#qrcode canvas{width:112px;height:112px}
+.qr p{margin:0;font-size:.92rem;color:var(--muted)}
+ol.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px;counter-reset:s}
+ol.steps>li{counter-increment:s;display:grid;grid-template-columns:40px minmax(0,1fr);gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+ol.steps>li::before{content:counter(s);font:800 1.15rem/40px var(--f-disp);text-align:center;width:40px;height:40px;border-radius:50%;background:var(--pen-soft);color:var(--pen)}
+.steps h3{font:700 1.05rem/1.3 var(--f-body);margin:6px 0 6px}
+.steps p{font-size:.95rem}
+.glyph{display:inline-flex;align-items:center;justify-content:center;vertical-align:-6px;width:28px;height:28px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--pen);margin:0 2px}
+.glyph svg{width:18px;height:18px}
+.variant{border-left:3px solid var(--pen);padding:6px 0 6px 12px;margin:8px 0}
+.variant b{display:block;font-size:.86rem;color:var(--muted);font-weight:600;margin-bottom:2px}
+.tip{background:var(--warn-soft);border-radius:12px;padding:12px 14px;margin:12px 0;font-size:.95rem}
+.tip b{color:var(--warn)}
+.done{background:var(--card);border:2px solid var(--ok);border-radius:14px;padding:14px 16px;margin-top:12px}
+.done h3{margin:0 0 6px;font:700 1.05rem var(--f-body);color:var(--ok)}
+dl.faq{margin:0;display:flex;flex-direction:column;gap:10px}
+dl.faq div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+dl.faq dt{font-weight:600;margin-bottom:4px}
+dl.faq dd{margin:0;font-size:.95rem;color:var(--muted)}
+.foot{color:var(--muted);font-size:.85rem;margin-top:28px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<main class="wrap">
+  <h1>Studiowskaz <span>na iPhonie</span></h1>
+  <p class="lead">Studiowskaz to aplikacja, która pomaga wybrać kierunek studiów i sprawdzić, ile punktów dają Twoje wyniki matury na różnych uczelniach. Nie ma jej w App Store. Instaluje się ją ze strony w Safari i potem działa jak zwykła aplikacja z ikoną na ekranie. Zajmie to około 2 minut.</p>
+
+  <h2>Adres aplikacji</h2>
+  <div class="addr"><code id="url">leebeeu.github.io/Studiowskaz</code><button type="button" id="copy">Kopiuj</button></div>
+  <div class="qr">
+    <div id="qrcode" aria-label="Kod QR z adresem aplikacji"></div>
+    <p>Jeśli ta instrukcja jest otwarta na innym ekranie, otwórz w iPhonie <b>Aparat</b>, skieruj go na kod i stuknij żółty napis z adresem, który się pojawi.</p>
+  </div>
+
+  <h2>Instalacja krok po kroku</h2>
+  <ol class="steps">
+    <li><div>
+      <h3>Otwórz Safari</h3>
+      <p>To niebieska ikona z kompasem. Instaluj w <b>Safari</b>, nie w Instagramie, Messengerze ani w innej aplikacji.</p>
+      <div class="tip"><b>Link przyszedł w wiadomości?</b> Jeśli otworzył się w środku Messengera albo Instagrama, stuknij trzy kropki w rogu i wybierz <span class="hl">Otwórz w Safari</span>.</div>
+    </div></li>
+    <li><div>
+      <h3>Wpisz adres</h3>
+      <p>Stuknij pasek adresu, wpisz <span class="hl">leebeeu.github.io/Studiowskaz</span> i stuknij <b>Idź</b> na klawiaturze. Wielkość liter nie ma znaczenia. Poczekaj, aż strona się załaduje.</p>
+    </div></li>
+    <li><div>
+      <h3>Otwórz menu „Udostępnij”</h3>
+      <p>Wygląd Safari zależy od wersji iOS. Zobacz, który pasuje do Twojego telefonu:</p>
+      <div class="variant"><b>Nowy iOS (pasek adresu na dole z trzema kropkami)</b>
+        Stuknij <span class="glyph" aria-label="przycisk z trzema kropkami"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></span> obok adresu, a potem <span class="hl">Udostępnij</span>.</div>
+      <div class="variant"><b>Starszy iOS (przyciski na dolnym pasku)</b>
+        Stuknij ikonę <span class="glyph" aria-label="ikona udostępniania"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg></span> (kwadrat ze strzałką w górę) na środku dolnego paska.</div>
+    </div></li>
+    <li><div>
+      <h3>Wybierz „Do ekranu początkowego”</h3>
+      <p>Przewiń listę w dół i stuknij <span class="hl">Do ekranu początkowego</span> <span class="glyph" aria-label="ikona kwadratu z plusem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M12 8v8M8 12h8"/></svg></span>. Opcja może też nazywać się <b>Dodaj do ekranu początkowego</b>. Jeśli jej nie widać, przewiń listę do samego końca.</p>
+    </div></li>
+    <li><div>
+      <h3>Stuknij „Dodaj”</h3>
+      <p>Nazwa podpowie się sama: <b>Studiowskaz</b>. Jeśli widzisz przełącznik <b>Otwórz jako aplikację internetową</b>, zostaw go włączonego (zielony). Na koniec stuknij <span class="hl">Dodaj</span> w prawym górnym rogu.</p>
+    </div></li>
+    <li><div>
+      <h3>Otwórz z ikony</h3>
+      <p>Na ekranie początkowym pojawi się niebieska ikona z żółtym paskiem i podpisem <b>Studiowskaz</b>. Od teraz otwieraj aplikację z tej ikony, a nie z Safari.</p>
+    </div></li>
+  </ol>
+
+  <div class="done">
+    <h3>Gotowe. Co dalej?</h3>
+    <p><b>Zaloguj się</b>, żeby Twoje wyniki zapisywały się na koncie i były też na komputerze: stuknij <span class="hl">Zaloguj się</span> w prawym górnym rogu, a potem <b>Zaloguj przez Google</b>. Bez konta Google możesz założyć konto e-mailem i hasłem. Wtedy przyjdzie mail z linkiem do potwierdzenia (zajrzyj też do spamu).</p>
+    <p style="margin:0">Na początek otwórz zakładkę <b>Dopasuj kierunek</b>. To krótki test, po którym zobaczysz 3 kierunki najlepiej pasujące do Twoich zainteresowań i mocnych stron. Potem w <b>Moje wyniki</b> wpisz przewidywane wyniki matury.</p>
+  </div>
+
+  <h2>Gdyby coś nie działało</h2>
+  <dl class="faq">
+    <div><dt>Nie ma opcji „Do ekranu początkowego”</dt><dd>Najczęściej strona jest otwarta w innej aplikacji, a nie w Safari. Wróć do kroku 1 i otwórz adres w Safari.</dd></div>
+    <div><dt>Ikona zniknęła albo jej nie widzę</dt><dd>Przesuń palcem w lewo do ostatniego ekranu (Biblioteka aplikacji) i wpisz u góry „Studiowskaz”. Ikonę można przytrzymać i przeciągnąć z powrotem na ekran początkowy.</dd></div>
+    <div><dt>Na dole pojawił się pasek „Jest nowa wersja”</dt><dd>To normalne. Stuknij <b>Odśwież</b>, a aplikacja zaktualizuje się sama. Twoje wyniki zostaną.</dd></div>
+    <div><dt>Logowanie przez Google się nie otwiera</dt><dd>Spróbuj jeszcze raz. Jeśli dalej nie działa, w <b>Ustawieniach → Aplikacje → Safari</b> wyłącz <b>Blokuj okna wyskakujące</b> albo zaloguj się e-mailem i hasłem.</dd></div>
+    <div><dt>Czy działa bez internetu?</dt><dd>Tak. Po pierwszym otwarciu aplikacja działa też offline. Zmiany wyślą się na konto, gdy telefon znowu złapie internet.</dd></div>
+    <div><dt>Jak ją usunąć?</dt><dd>Przytrzymaj ikonę, stuknij <b>Usuń zakładkę</b> albo <b>Usuń</b> i potwierdź. Dane zapisane na koncie zostaną.</dd></div>
+  </dl>
+
+  <p class="foot">Instrukcja dotyczy iPhone’a z aktualnym iOS. Na Androidzie aplikację instaluje się z Chrome: menu ⋮, potem „Zainstaluj aplikację”.</p>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+const URL_FULL = "https://leebeeu.github.io/Studiowskaz/";
+try {
+  new QRCode(document.getElementById("qrcode"), {text: URL_FULL, width: 224, height: 224, colorDark: "#18203a", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.M});
+} catch (e) {
+  document.querySelector(".qr").hidden = true;
+}
+const btn = document.getElementById("copy");
+btn.addEventListener("click", () => {
+  const ok = () => {btn.textContent = "Skopiowano"; setTimeout(() => {btn.textContent = "Kopiuj";}, 1800);};
+  const fallback = () => {const r = document.createRange(); r.selectNodeContents(document.getElementById("url")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent = "Zaznaczono";};
+  try {navigator.clipboard.writeText(URL_FULL).then(ok, fallback);} catch (e) {fallback();}
+});
+</script>
