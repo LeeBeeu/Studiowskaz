@@ -26,8 +26,8 @@ Przy każdej publikacji podbij `VERSION` w `app/sw.js`, wtedy telefon pokaże pa
 
 | Tryb | Kiedy | Dane |
 |------|-------|------|
-| lokalny | `app/js/firebase-config.js` zawiera `null` (tak jest teraz) | tylko w tej przeglądarce, bez logowania |
-| z kontem | uzupełniony `app/js/firebase-config.js` | w Firebase, logowanie Google albo e-mail i hasło |
+| lokalny | `app/js/firebase-config.js` zawiera `null` | tylko w tej przeglądarce, bez logowania |
+| z kontem | uzupełniony `app/js/firebase-config.js` (tak jest teraz, projekt `studiowskaz`) | w Firebase, logowanie Google albo e-mail i hasło |
 
 ## Logowanie i baza danych (Firebase, jednorazowo ok. 10 minut)
 
